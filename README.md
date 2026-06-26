@@ -1,0 +1,125 @@
+# SDD — Spec-Driven Development for Claude Code
+
+> *Engineering software at the speed of thought, with the precision of logic.*
+
+**SDD is an agent orchestration protocol** packaged as a Claude Code plugin. Instead of asking an AI to "build a feature" in one shot, SDD runs a strict, auditable pipeline that turns an idea into shipped software:
+
+```
+/create-spec  →  /sdd  →  /sdd-quality-gate
+   spec          architecture · backlog · parallel execution        GO / NO-GO
+```
+
+It treats specifications as **executable governance**: every task is bounded by a surgical file scope, routed to the right-sized model, run by an isolated agent, and verified objectively before it counts as done.
+
+---
+
+## Why SDD
+
+| | Generic AI dev | **SDD** |
+|---|---|---|
+| Context | Whole project (drift, hallucination) | **Surgical scope** per task (`read_architecture_section` + `file_scope`) |
+| Architecture | Implicit / accidental | **Contract-first** (`documentation/api·db·ui` + `conventions.md`) |
+| Model usage | One model for everything | **Routing**: Opus for design, Sonnet for code, Haiku for docs |
+| Parallelism | Risky / serial | **Collision-safe waves** — tasks with disjoint `file_scope` run in parallel |
+| "Done" | The agent says so | **Verify, don't trust** — skill proof + diff-in-scope + green tests |
+| Release | Manual review | **Mandatory GO/NO-GO quality gate** |
+
+---
+
+## Install
+
+```text
+/plugin marketplace add esaraviam/sdd-protocol
+/plugin install sdd
+```
+
+That's it — the 4 commands and 10 expert skills load automatically and are available in **any** project. Run the commands from your **project root** (not from this repo).
+
+> **Optional — semantic memory.** SDD works fully standalone. If you also install [engram](https://github.com/Gentleman-Programming/engram) (`/plugin install engram`) and allow `Bash(engram:*)`, the pipeline gains cross-spec semantic recall that travels with your repo. Without it, SDD falls back to git-tracked memory files and never fails.
+
+---
+
+## Quickstart
+
+```text
+# 1. Capture the requirement (interview, one question at a time)
+/create-spec checkout-flow.md
+
+# 2. Run the pipeline (waits for your [APPROVAL] between phases)
+/sdd checkout-flow.md
+#    Phase 1  architecture contracts        → documentation/api·db·ui + conventions.md   [APPROVAL]
+#    Phase 2  atomic task graph             → .sdd/tasks/task_NN.json                    [APPROVAL]
+#    Phase 3  parallel agent fan-out        → implemented code (verified, in-scope)
+#    Phase 4  quality gate (auto)           → GO / NO-GO
+
+# Interrupted? Resume from the task graph:
+/sdd_resume
+
+# Run the gate standalone anytime:
+/sdd-quality-gate checkout-flow.md
+```
+
+The feature is only "done" when the gate returns **GO**. On **NO-GO** it names the exact task/skill to route back to.
+
+---
+
+## What's inside
+
+**Commands (4)**
+
+| Command | Role |
+|---|---|
+| `/create-spec` | Business-analyst interview → `specs/<feature>.md` |
+| `/sdd` | Master orchestrator: architecture → backlog → parallel execution → auto quality gate |
+| `/sdd_resume` | Resume an interrupted pipeline from `.sdd/tasks/` |
+| `/sdd-quality-gate` | Closing GO/NO-GO gate (completeness → QA → audit → release plan → memory) |
+
+**Skills (10)** — the expertise the orchestrator invokes by name:
+
+- **Design & security:** `software-architect`, `ai-security-expert`, `ux-design-expert`
+- **Implementation:** `backend-coder`, `senior-frontend-engineer`
+- **Quality & release:** `qa-engineer`, `webapp-testing`, `refactor-auditor`, `release-manager`
+- **Memory:** `system-memory`
+
+---
+
+## How it works (the three pillars)
+
+1. **Surgical context over massive context.** Each task reads only its `read_architecture_section` and writes only inside its `file_scope`. No drift.
+2. **Token governance.** Intelligence is proportional to task complexity — Opus for strategy/security/the gate, Sonnet for logic, Haiku for utility.
+3. **Verification over trust.** A task is `completed` only when a `[SKILL-CONFIRMATION]` marker is present, `git diff` stays inside scope, declared files exist, and tests pass.
+
+Read the full operating manual in [`docs/SDD-FLOW.md`](docs/SDD-FLOW.md) and the philosophy in [`docs/SDD_MANIFESTO.md`](docs/SDD_MANIFESTO.md).
+
+---
+
+## Artifacts SDD produces in your project
+
+```text
+your-project/
+├── specs/<feature>.md                              # /create-spec
+├── documentation/
+│   ├── api|db|ui/<feature>.md                       # Phase 1 contracts
+│   ├── conventions.md                               # cross-cutting rules (cached, read by every task)
+│   └── SYSTEM_MAP.md                                # living architecture index
+├── .sdd/
+│   ├── tasks/task_NN.json                           # the dependency graph
+│   ├── quality-gate-report.md                       # GO/NO-GO verdict
+│   └── retrospectives.json                          # lessons fed back into future runs
+└── src/ ...                                          # the implemented feature
+```
+
+---
+
+## The golden rule
+
+> **Never implement what has not been designed; never design what has not been specified; never release what has not been verified.**
+
+---
+
+## License
+
+MIT (see [`LICENSE`](LICENSE)) — except three bundled skills (`backend-coder`,
+`senior-frontend-engineer`, `webapp-testing`) which are redistributed under the
+**Apache License 2.0**, with their original license files preserved in-tree.
+See [`NOTICE`](NOTICE) for details.
