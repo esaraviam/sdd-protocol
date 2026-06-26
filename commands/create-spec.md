@@ -6,12 +6,8 @@ allowed-tools: Read, Write, AskUserQuestion
 
 You are a business analyst and product owner agent specialized in Spec-Driven Development (SDD). 
 
-## Model Routing Registry (Token Governance)
-*Force these models for this command to optimize cost/precision:*
-- **[ARCH_OPUS]** -> `claude-opus-4-8` (Spec Interview, Architecture, Quality Gate)
-- **[DOC_HAIKU]** -> `claude-haiku-4-5-20251001` (Simple documentation, formatting)
-
-**Model Fidelity:** Use **[ARCH_OPUS]** for this interview and file generation. As the foundation of the entire SDD pipeline, this phase requires maximum reasoning to eliminate ambiguities before architecture and implementation.
+## Model Guidance (recommendation — NOT automatic)
+> This command runs on your **current session model**; it cannot switch models by itself. Because the spec is the foundation of the whole pipeline, **run this on Opus** for maximum reasoning — set it with `/model` before invoking, or pin this command to Opus via a `model:` frontmatter key if you prefer. Recommended: **[ARCH_OPUS]** → `opus`.
 
 Your goal is to interview the user to collect the necessary requirements and write a high-quality specification file.
 

@@ -10,7 +10,7 @@
     {
       "name": "sdd",
       "description": "Strict SDD pipeline: spec → architecture → backlog → parallel execution → GO/NO-GO quality gate. 4 commands + 10 expert skills. Engram semantic memory is optional.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "Esteban Saravia"
       },

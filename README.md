@@ -19,7 +19,7 @@ It treats specifications as **executable governance**: every task is bounded by 
 |---|---|---|
 | Context | Whole project (drift, hallucination) | **Surgical scope** per task (`read_architecture_section` + `file_scope`) |
 | Architecture | Implicit / accidental | **Contract-first** (`documentation/api·db·ui` + `conventions.md`) |
-| Model usage | One model for everything | **Routing**: Opus for design, Sonnet for code, Haiku for docs |
+| Model usage | One model for everything | **Model discipline**: Opus for design, Sonnet for code, Haiku for docs — see note below |
 | Parallelism | Risky / serial | **Collision-safe waves** — tasks with disjoint `file_scope` run in parallel |
 | "Done" | The agent says so | **Verify, don't trust** — skill proof + diff-in-scope + green tests |
 | Release | Manual review | **Mandatory GO/NO-GO quality gate** |
@@ -86,7 +86,7 @@ The feature is only "done" when the gate returns **GO**. On **NO-GO** it names t
 ## How it works (the three pillars)
 
 1. **Surgical context over massive context.** Each task reads only its `read_architecture_section` and writes only inside its `file_scope`. No drift.
-2. **Token governance.** Intelligence is proportional to task complexity — Opus for strategy/security/the gate, Sonnet for logic, Haiku for utility.
+2. **Token governance.** Intelligence is proportional to task complexity — Opus for strategy/security/the gate, Sonnet for logic, Haiku for utility. ⚠️ *A slash command can't change your session's model mid-run, so this is a **recommendation you apply** with `/model` for main-thread phases. A genuine automatic per-task override only happens in the **Phase 3 sub-agent fan-out** (Task tool `model` param). Tip: run the session on Opus and let Phase 3 drop to Sonnet/Haiku.*
 3. **Verification over trust.** A task is `completed` only when a `[SKILL-CONFIRMATION]` marker is present, `git diff` stays inside scope, declared files exist, and tests pass.
 
 Read the full operating manual in [`docs/SDD-FLOW.md`](docs/SDD-FLOW.md) and the philosophy in [`docs/SDD_MANIFESTO.md`](docs/SDD_MANIFESTO.md).

@@ -5,11 +5,11 @@ allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Skill, Task
 
 You are a strict SDD orchestrator resuming an interrupted development pipeline.
 
-## Model Routing Registry (Token Governance)
-*Force these models for sub-agents and tool calls to optimize cost/precision:*
-- **[ARCH_OPUS]** -> `claude-opus-4-8` (Audit, Validation)
-- **[DEV_SONNET]** -> `claude-sonnet-4-6` (Implementation Tasks)
-- **[DOC_HAIKU]** -> `claude-haiku-4-5-20251001` (Logs, Simple Resumes)
+## Model Guidance (recommendations — NOT automatic)
+> The main thread runs on your **session model** (`/model`). A real per-task model only applies when you pass the task's `model_hint` as the Task tool's `model` parameter (short name) during the fan-out below; otherwise sub-agents inherit the session model.
+- **[ARCH_OPUS]** → `opus` (Audit, Validation)
+- **[DEV_SONNET]** → `sonnet` (Implementation Tasks)
+- **[DOC_HAIKU]** → `haiku` (Logs, Simple Resumes)
 
 Execute the following immediately:
 0. **Engram import (if installed):** pull any memory chunks committed under `.engram/` into the local DB so a resumed run shares the same project memory as the original session:

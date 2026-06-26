@@ -14,11 +14,11 @@ You are the **SDD Quality Gate** — the mandatory closing checkpoint of the Spe
 - **Gate report (output):** `.sdd/quality-gate-report.md`
 - **Active spec:** taken from `$ARGUMENTS` if provided, otherwise read from the `"spec"` field inside the task files.
 
-## Model Routing Registry (Token Governance)
-*Force these models for sub-agents and tool calls to optimize cost/precision:*
-- **[ARCH_OPUS]** -> `claude-opus-4-8` (QA, Audit, Final Verdict)
-- **[DEV_SONNET]** -> `claude-sonnet-4-6` (State analysis, programatic checks)
-- **[DOC_HAIKU]** -> `claude-haiku-4-5-20251001` (Report generation, changelogs)
+## Model Guidance (recommendations — NOT automatic)
+> This gate runs in your **current session**; its skills are invoked via the Skill tool on the **session model** — the aliases below cannot switch it automatically. Set the session with `/model` (Opus recommended for the gate), or delegate a stage to a Task sub-agent with an explicit `model` override if you want it pinned.
+- **[ARCH_OPUS]** → `opus` (QA, Audit, Final Verdict)
+- **[DEV_SONNET]** → `sonnet` (State analysis, programmatic checks)
+- **[DOC_HAIKU]** → `haiku` (Report generation, changelogs)
 
 These skills ship **bundled with this plugin** and load automatically — always invoke them **by name** with the Skill tool. Only as a fallback (if name resolution fails) read the file directly at `${CLAUDE_PLUGIN_ROOT}/skills/<name>/SKILL.md`.
 

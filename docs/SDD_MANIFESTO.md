@@ -15,12 +15,14 @@ Agents do not need *more* information; they need the *exact* information.
 - **The Protocol:** Every task is bounded by a `file_scope` and a `read_architecture_section`. 
 - **The Result:** We eliminate "Agent Drift" by forcing a tunnel-vision focus on the atomic task at hand.
 
-### II. Token Governance (Intelligent Routing)
-Intelligence must be proportional to the complexity of the task. 
+### II. Token Governance (Model Discipline)
+Intelligence must be proportional to the complexity of the task.
 - **[ARCH_OPUS]** for Strategy & Security.
 - **[DEV_SONNET]** for Logic & Implementation.
 - **[DOC_HAIKU]** for Speed & Utility.
 Using a high-reasoning model for boilerplate is a technical debt; using a low-reasoning model for architecture is a failure.
+
+> **A note on honesty:** Claude Code cannot switch a session's model mid-run, so this is **discipline guided by the protocol, not magic auto-switching.** Main-thread phases run on the model you select with `/model`; a genuine per-task model override only applies to the **Phase 3 sub-agent fan-out** via the Task tool's `model` parameter. The recommendation stands — the enforcement is partly yours.
 
 ### III. Verification over Trust
 In SDD, a task is not "done" because the agent says so. It is "done" when the **Quality Gate** proves it.
@@ -72,7 +74,7 @@ graph TD
 | :--- | :--- | :--- |
 | **Context Management** | Full Project (Wasteful) | Surgical Scope (Efficient) |
 | **Architecture** | Implicit / Accidental | Explicit / Contract-First |
-| **Model Usage** | Monolithic (One size fits all) | Dynamic Routing (Opus/Sonnet/Haiku) |
+| **Model Usage** | Monolithic (One size fits all) | Model discipline (Opus/Sonnet/Haiku) — auto only in Phase 3 sub-agents; main thread set via `/model` |
 | **Validation** | Manual Review | Multi-Stage Automated Gate |
 | **Scalability** | High Failure Rate on complexity | Linear Scalability via Parallel Waves |
 | **Token Cost** | Exponential Growth | Optimized (Prompt Caching + Routing) |

@@ -86,18 +86,23 @@ El pipeline corre en **3 fases estrictas** con `[APPROVAL]` obligatorio entre ca
 
 ---
 
-## 5. Optimización de Modelos y Tokens (Enrutamiento Automático)
+## 5. Modelos por fase (recomendación, **no** enrutamiento automático)
 
-El pipeline selecciona automáticamente el modelo de Anthropic más eficiente para cada tarea:
+> ⚠️ **Importante — cómo funciona de verdad.** Un slash command corre en **tu sesión actual de Claude Code y no puede cambiar el modelo de la sesión a mitad de ejecución.** Por lo tanto las fases que corren en el hilo principal (`/create-spec`, Fase 1, Fase 2, Fase 4 y cualquier llamada vía Skill tool) usan **el modelo que elegiste con `/model`**, sin importar la etiqueta. El **único** punto donde sí se aplica un modelo distinto es la **Fase 3 (fan-out)**: el orquestador puede pasar un `model` por sub-agente a la Task tool (`opus`/`sonnet`/`haiku`/`fable`); si no lo pasa, el sub-agente hereda el modelo de sesión.
 
-| Fase / Tarea | Modelo | Razón |
-| :--- | :--- | :--- |
-| **Génesis de Spec** (`/create-spec`) | `Opus` | Eliminar ambigüedades en la raíz del proyecto. |
-| **Arquitectura** (`Fase 1`) | `Opus` | Razonamiento profundo para diseño de contratos y seguridad. |
-| **Backlog** (`Fase 2`) | `Sonnet` | Precisión técnica para descomponer tareas atómicas. |
-| **Implementación** (`Fase 3`) | `Sonnet` | El estándar para escritura de código y diffs. |
-| **Quality Gate** (`Fase 4`) | `Opus` | Validación crítica vs Spec y Auditoría de código. |
-**Prompt Caching:** Los agentes están instruidos para leer siempre `conventions.md` al inicio de cada tarea. Esto activa el caché de Anthropic, reduciendo el costo de tokens hasta en un 90% en lecturas repetitivas.
+La tabla siguiente es la **guía recomendada** de qué modelo conviene para cada fase — tú la aplicas con `/model` (hilo principal) o vía `model_hint` → parámetro `model` de la Task tool (Fase 3):
+
+| Fase / Tarea | Modelo recomendado | Cómo se aplica | Razón |
+| :--- | :--- | :--- | :--- |
+| **Génesis de Spec** (`/create-spec`) | `Opus` | `/model` (o `model:` en frontmatter del comando) | Eliminar ambigüedades en la raíz del proyecto. |
+| **Arquitectura** (`Fase 1`) | `Opus` | `/model` en tu sesión | Razonamiento profundo para contratos y seguridad. |
+| **Backlog** (`Fase 2`) | `Sonnet` | `/model` en tu sesión | Precisión técnica para descomponer tareas atómicas. |
+| **Implementación** (`Fase 3`) | `Sonnet`/`Haiku` | `model_hint` → parámetro `model` de la Task tool ✅ **real** | Estándar para código; Haiku solo para doc/boilerplate. |
+| **Quality Gate** (`Fase 4`) | `Opus` | `/model` en tu sesión | Validación crítica vs Spec y auditoría. |
+
+> 💡 **Recomendación práctica:** corre toda la sesión SDD en **Opus** (la calidad del diseño y del gate manda) y deja que la Fase 3 baje a `sonnet`/`haiku` por `model_hint`, que es donde el ahorro es real y automático.
+
+**Prompt Caching:** los agentes leen siempre `conventions.md` al inicio de cada tarea. Esto activa el caché de Anthropic, reduciendo el costo de tokens en lecturas repetitivas.
 
 ---
 

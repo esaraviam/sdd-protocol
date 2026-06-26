@@ -13,11 +13,13 @@ If `$ARGUMENTS` is empty, ask: "¿Qué archivo de especificación en /specs dese
 - **Architecture output (modular):** `documentation/api/`, `documentation/db/`, `documentation/ui/`
 - **Task graph:** `.sdd/tasks/*.json`
 
-## Model Routing Registry (Token Governance)
-*Force these models for sub-agents and tool calls to optimize cost/precision:*
-- **[ARCH_OPUS]** -> `claude-opus-4-8` (Architecture, Security, Quality Gate)
-- **[DEV_SONNET]** -> `claude-sonnet-4-6` (Backlog Decomposition, Implementation Tasks)
-- **[DOC_HAIKU]** -> `claude-haiku-4-5-20251001` (Documentation, Logs, Spec Interviews)
+## Model Guidance (recommendations — NOT automatic)
+> **How model selection actually works here.** A slash command runs in your **current Claude Code session and cannot change the session's model mid-run.** The aliases below are *recommendations*, not automatic switches. Phases that run in the main thread (Phase 1, 2, 4 — including any Skill-tool call) use whatever model you selected with `/model`; to follow a recommendation, switch the session model yourself. The **only** place a different model is genuinely applied is the **Phase 3 sub-agent fan-out**: the Task tool accepts a per-agent `model` override (`opus` / `sonnet` / `haiku` / `fable`). If you don't pass it, the sub-agent inherits the session model.
+
+Recommended model per role (pass the short name to the Task tool; set the session with `/model`):
+- **[ARCH_OPUS]** → `opus` (Architecture, Security, Quality Gate — deep reasoning)
+- **[DEV_SONNET]** → `sonnet` (Backlog Decomposition, Implementation Tasks)
+- **[DOC_HAIKU]** → `haiku` (Documentation, Logs, simple formatting)
 
 These skills ship **bundled with this plugin** and load automatically — always invoke them **by name** with the Skill tool. Only as a fallback (if name resolution fails) read the file directly at `${CLAUDE_PLUGIN_ROOT}/skills/<name>/SKILL.md` (e.g. `${CLAUDE_PLUGIN_ROOT}/skills/software-architect/SKILL.md`). Available worker skills: `software-architect`, `backend-coder`, `senior-frontend-engineer`, `ux-design-expert`, `ai-security-expert`, `qa-engineer`, `webapp-testing`, `refactor-auditor`, `release-manager`, `system-memory`.
 
@@ -109,7 +111,7 @@ Work in **waves**:
 2. **Build the wave (collision-safe).** From the unblocked set, select a batch whose `file_scope` globs are **pairwise disjoint**. Two tasks that share any file go in different waves — never dispatch them together. Tasks with no active lock only.
 3. **Claim.** For each task in the wave, set `"status": "in_progress"` and stamp a lock (session id / ISO timestamp) before dispatch, so parallel terminals don't double-pick.
 4. **Fan out in background.** Launch one sub-agent per task in the wave **in parallel** (`run_in_background: true`). 
-   *   **Model Selection:** Respect the `"model_hint"` from the task JSON. If `"model_hint"` is missing, default to **[DEV_SONNET]**.
+   *   **Model Selection:** This is the one place a real per-task model applies. Pass the task's `"model_hint"` as the Task tool's `model` parameter (short name: `opus` / `sonnet` / `haiku`). If `"model_hint"` is missing, use `sonnet`. If you don't set the parameter, the sub-agent simply inherits your session model — no error, just no routing.
    *   **Prompt Caching Strategy:** Agent must read `documentation/conventions.md` (and any relevant modular convention file) first.
    *   **Payload:** Each agent's prompt must contain ONLY a tight payload:
        - the task's `id`, `title`, `acceptance_criteria` and `file_scope`;
