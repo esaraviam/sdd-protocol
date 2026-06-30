@@ -1,5 +1,5 @@
 ---
-description: Interactively interview the user to gather requirements and write a structured business specification into the /specs folder. Entry point of the SDD pipeline, feeds /sdd.
+description: Interactively interview the user to gather requirements and write a structured business specification into the /specs folder. Entry point of the SDD pipeline, feeds /sdd-plan.
 argument-hint: "<filename.md> — e.g. /create-spec checkout-flow.md"
 allowed-tools: Read, Write, AskUserQuestion
 ---
@@ -48,6 +48,6 @@ The generated file must strictly follow this structure:
 - [ ] Criteria 2
 
 ### Phase 3: Confirmation
-Confirm to the user that the file `specs/$ARGUMENTS` has been successfully created, and output the absolute path so they can review it before passing it to the `/sdd` orchestrator.
+Confirm to the user that the file `specs/$ARGUMENTS` has been successfully created, and output the absolute path so they can review it before passing it to `/sdd-plan`.
 
 Let's begin. Ask the first question to the user to start the interview.

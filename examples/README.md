@@ -43,12 +43,12 @@ honest about its own provenance:
   code; the 12 tests genuinely pass via `node --test`. Every
   `[SKILL-CONFIRMATION]` marker in the task graph and reports names a file that
   **actually appears in this directory's diff** — exactly the anchor check the
-  orchestrator (`commands/sdd.md`, Phase 3 reconciliation) and the quality gate
+  execution coordinator (`commands/sdd-execute.md`, Phase 3 reconciliation) and the quality gate
   enforce. You can re-run the suite and grep the markers against the files to
   confirm nothing is invented.
 
 - **Hand-assembled, not a captured autonomous run.** The SDD slash commands
-  (`/create-spec`, `/sdd`, `/sdd-quality-gate`) are designed to run inside a
+  (`/create-spec`, `/sdd-plan`, `/sdd-execute`, `/sdd-quality-gate`) are designed to run inside a
   *consuming* project, not inside this plugin repo. So these artifacts were
   produced by executing the pipeline's phases by hand against this toy feature
   and writing the outputs in the exact formats the command files specify — they

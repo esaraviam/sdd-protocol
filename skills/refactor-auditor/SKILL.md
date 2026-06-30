@@ -148,7 +148,7 @@ For each issue:
 ## HANDOFF
 
 After producing the refactor plan:
-- If running inside the `/sdd` pipeline: output the plan in the orchestrator's expected format and flag which issues are BLOCKING (must fix now) vs ADVISORY (improve in next iteration).
+- If running inside the SDD pipeline (`/sdd-execute` / `/sdd-quality-gate`): output the plan in the orchestrator's expected format and flag which issues are BLOCKING (must fix now) vs ADVISORY (improve in next iteration).
 - If standalone: present the plan to the user and ask "Should I delegate any of these refactors to a specialized skill?"
 
 ---

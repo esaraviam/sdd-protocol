@@ -2,15 +2,15 @@
   "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
   "name": "sdd",
   "description": "Spec-Driven Development — an agent orchestration protocol for Claude Code. Turns an idea into shipped software through a strict pipeline: spec → architecture → backlog → parallel agent fan-out → mandatory GO/NO-GO quality gate. Built on surgical context, Opus/Sonnet/Haiku model routing, collision-safe parallelism, and verify-don't-trust reconciliation.",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "author": {
     "name": "Esteban Saravia",
     "url": "https://github.com/esaraviam"
   },
   "commands": [
     "./commands/create-spec.md",
-    "./commands/sdd.md",
-    "./commands/sdd_resume.md",
+    "./commands/sdd-plan.md",
+    "./commands/sdd-execute.md",
     "./commands/sdd-quality-gate.md"
   ],
   "homepage": "https://github.com/esaraviam/sdd-protocol",
