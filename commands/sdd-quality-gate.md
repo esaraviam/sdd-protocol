@@ -54,8 +54,13 @@ Run this BEFORE invoking any quality skill. If it fails, output **NO-GO** immedi
 1. Invoke `qa-engineer` with the active spec, the implemented code, and the aggregated `acceptance_criteria` from every task.
 2. Capture its verdict: **APPROVED**, **APPROVED-WITH-WARNINGS**, or **REJECTED**, plus the list of failed checks and risks.
 3. If a dev/preview server is running and the spec has a UI surface, delegate UI-flow validation to `webapp-testing` and fold its result into the QA outcome.
+4. **Skill proof (verify, don't trust — same falsifiability as the Phase 3 fan-out).** The captured verdict is *self-reported*; do not score the stage on it until it survives ground truth:
+   - Require the marker `[SKILL-CONFIRMATION: qa-engineer | Verdict: <verdict> | Critical Issues Found: <count>]` exactly as defined in `qa-engineer`'s `SKILL.md`. Missing or name-mismatched → the skill run is unproven → **NO-GO input** (you cannot certify quality on an unproven check).
+   - **Independently re-run the tests yourself** (the test/lint command the tasks declared, or the repo's standard `test`/`lint` script) via Bash. If it exits non-zero, the **effective QA verdict is REJECTED** no matter what the marker says — a `Verdict: APPROVED` over a failing suite is a contradiction, and the evidence wins.
+   - `Critical Issues Found` must be consistent with the failed-checks list (a `0` alongside non-empty failures → reject the proof).
+   - The **verified** verdict (this re-derived one, not the self-report) is what every downstream stage and the consolidated verdict consume.
 
-`qa-engineer` is the dominant gate: a **REJECTED** verdict forces a final **NO-GO** regardless of the other stages.
+`qa-engineer` is the dominant gate: a **REJECTED** *verified* verdict forces a final **NO-GO** regardless of the other stages.
 
 ---
 
@@ -65,6 +70,9 @@ Run this BEFORE invoking any quality skill. If it fails, output **NO-GO** immedi
 1. Invoke `refactor-auditor` over the files delivered by the pipeline.
 2. Capture the overall health score (0–10) and the issues, classified as **BLOCKING** (must fix now) vs **ADVISORY** (next iteration).
 3. Any **BLOCKING** issue forces **NO-GO**. ADVISORY issues are reported but do not block.
+4. **Skill proof (verify, don't trust).** Require the marker `[SKILL-CONFIRMATION: refactor-auditor | Health Score: <0-10> | Files Audited: <files_in_diff> | BLOCKING: <count> | ADVISORY: <count>]`, then cross-check it against ground truth — for an analysis skill the anchor is the feature's **cumulative `git diff`**:
+   - Every path in `Files Audited` must appear in that diff. A marker that names files absent from the diff, or names none while the diff is non-empty, means the audit did not really run over the delivered code → reject the proof → **NO-GO input**.
+   - The marker's `BLOCKING`/`Health Score` must match the issues in the report body (a `BLOCKING: 0` that contradicts a blocking issue, or a score inconsistent with the listed problems → reject).
 
 ---
 
@@ -76,7 +84,7 @@ Run this BEFORE invoking any quality skill. If it fails, output **NO-GO** immedi
    - Generate the changelog (Added / Changed / Fixed) and release notes.
    - State the merge strategy and "Safe to merge? yes/no".
 2. **Hard constraint:** do NOT create commits, tags, or branches. This stage produces a release *plan*, not a release. The user executes the actual release after the gate returns GO.
-3. `release-manager` must report **not safe** if QA was REJECTED — cross-check this matches Stage 1.
+3. **Skill proof + cross-check against the *verified* QA verdict.** Require the marker `[SKILL-CONFIRMATION: release-manager | SemVer Bump: <patch/minor/major> | Safe to Merge: <yes/no> | QA Cross-check: <APPROVED/REJECTED> | Git Mutated: no]`. Its `QA Cross-check` and `Safe to Merge` must agree with the **verified** Stage 1 verdict (the one re-derived from the gate's own test run, not qa-engineer's self-report): `Safe to Merge: yes` while Stage 1 is effectively REJECTED → reject the proof and force **NO-GO**. Verify `Git Mutated: no` against reality too — confirm via Bash (`git status`/`git tag`) that this stage created no commit, tag, or branch; if it did, that is a hard violation of the gate's no-mutation contract → **NO-GO**.
 
 ---
 
@@ -98,9 +106,10 @@ Compute the final verdict:
 
 - **GO** only if ALL hold:
   - Stage 0 completeness passed
-  - QA verdict is APPROVED or APPROVED-WITH-WARNINGS (not REJECTED)
-  - No BLOCKING refactor issues
-  - release-manager reports safe to merge
+  - **Every gate skill (Stages 1–3) produced a valid, cross-checked `[SKILL-CONFIRMATION]` marker.** A missing, name-mismatched, or cross-check-failing marker is itself a **NO-GO** — a verdict is never accepted on the skill's own word.
+  - The **verified** QA verdict (re-derived from the gate's own test run, not qa-engineer's self-report) is APPROVED or APPROVED-WITH-WARNINGS (not REJECTED)
+  - No BLOCKING refactor issues (with a `refactor-auditor` marker anchored to the feature diff)
+  - release-manager reports safe to merge, **consistent with the verified QA verdict**
 - Otherwise **NO-GO**, with a consolidated, deduplicated blocking list.
 
 For every blocking item, state **where to route back**: the specific `/sdd_resume` task, a re-run of a skill, or a manual fix. APPROVED-WITH-WARNINGS yields GO but the warnings are surfaced prominently.
@@ -138,6 +147,7 @@ QA (qa-engineer):        APPROVED | WITH-WARNINGS | REJECTED
 UI (webapp-testing):     PASS | SKIPPED | FAIL
 Architecture (auditor):  <score>/10   (BLOCKING: <n>, ADVISORY: <n>)
 Release (release-mgr):   bump <patch|minor|major> — safe: yes|no
+Skill proofs:            qa <✓|✗> · auditor <✓|✗> · release <✓|✗>   (markers cross-checked vs diff + own test run)
 
 ──────────────────────────────────
   VERDICT:  GO  /  NO-GO
@@ -164,6 +174,7 @@ Full report written to .sdd/quality-gate-report.md
 
 - Stage 0 is a hard prerequisite — never run quality skills on an incomplete pipeline.
 - A QA **REJECTED** or any **BLOCKING** refactor issue ⇒ final **NO-GO**, no exceptions.
+- **Verify, don't trust the verdicts.** Each gate skill's verdict (`Verdict`, `Health Score`, `Safe to Merge`) counts only with a valid `[SKILL-CONFIRMATION]` marker that survives cross-check against ground truth — the gate's own test run plus the feature's `git diff` — the same falsifiability the Phase 3 fan-out applies. When a self-reported verdict contradicts the evidence, the evidence wins.
 - Never create commits or tags. Release readiness is a plan, not an action.
 - Always name the exact route-back for each blocking item, so the user knows the next move.
 - Keep output tight: the verdict block is the headline; detail lives in the report file.
