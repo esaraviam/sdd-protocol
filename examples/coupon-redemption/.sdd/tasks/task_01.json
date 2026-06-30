@@ -1,0 +1,26 @@
+{
+  "id": "task_01",
+  "spec": "coupon-redemption.md",
+  "title": "Implement pure redeemCoupon logic (percent/fixed, clamping, expiry)",
+  "skill": "backend-coder",
+  "model_hint": "sonnet",
+  "status": "completed",
+  "depends_on": [],
+  "read_architecture_section": "documentation/api/api_coupon-redemption.md#Redemption rules",
+  "file_scope": ["src/coupon.mjs"],
+  "acceptance_criteria": [
+    "Percent and fixed coupons compute the correct discounted total in integer cents.",
+    "A discount larger than the subtotal clamps the total to 0 (never negative).",
+    "Expiry is inclusive at expiresAt; expired coupons are rejected.",
+    "Malformed codes, out-of-range percent values, and unknown kinds are rejected.",
+    "Invalid input returns { ok:false, reason } and never throws."
+  ],
+  "lock": null,
+  "result": {
+    "skill_invoked": "backend-coder",
+    "files": ["src/coupon.mjs"],
+    "marker": "[SKILL-CONFIRMATION: backend-coder | Implemented Files: src/coupon.mjs | Patterns: pure-function, integer-cents, result-type-over-exceptions]",
+    "criteria_satisfied": "5/5",
+    "validate_cmd": "node --test"
+  }
+}
