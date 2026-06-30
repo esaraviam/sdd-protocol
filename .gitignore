@@ -2,3 +2,6 @@
 *.log
 .idea/
 .vscode/
+open-pr.sh
+PR_BODY.md
+sdd-protocol-fixes.patch
