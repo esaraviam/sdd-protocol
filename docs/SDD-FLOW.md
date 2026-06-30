@@ -263,16 +263,18 @@ Emite un único veredicto vinculante: **GO** o **NO-GO**. El pipeline solo está
 | Etapa | Qué valida | Bloquea si… |
 |-------|------------|-------------|
 | **0. Completitud** *(programática)* | Todas las tareas `completed`, contratos presentes, `acceptance_criteria` y `read_architecture_section` válidos | Hay tareas sin terminar o locks colgados → **NO-GO** sin correr las skills |
-| **1. QA** (`qa-engineer` + `webapp-testing`) | Cumplimiento del spec, regresiones, flujos UI | Veredicto **REJECTED** → NO-GO |
+| **1. QA** (`qa-engineer` + `webapp-testing`) | Cumplimiento del spec, regresiones, flujos UI. El gate **re-corre los tests por su cuenta** y, en specs con UI, intenta levantar el server (`with_server.py`) en vez de saltarse la validación | Veredicto **REJECTED** (o tests en rojo) → NO-GO. UI saltada en silencio sobre un spec con UI → APPROVED-WITH-WARNINGS / NO-GO |
 | **2. Arquitectura** (`refactor-auditor`) | Salud arquitectónica, deuda técnica | Cualquier issue **BLOCKING** → NO-GO |
 | **3. Release** (`release-manager`, *solo análisis*) | Bump SemVer, changelog, estrategia de merge | Reporta "no safe" si QA rechazó |
 
 **Garantías clave:**
 
 - La Etapa 0 es prerrequisito duro: **no se corren las skills de calidad sobre un pipeline incompleto**.
+- **El gate verifica, no confía** — la misma falsabilidad de la Fase 3, aplicada a las skills del propio gate. Cada Etapa 1–3 debe traer su `[SKILL-CONFIRMATION]` anclado al diff; el gate re-deriva el veredicto de QA de su **propia** corrida de tests, y un veredicto auto-reportado que contradice la evidencia (tests en rojo, archivos ausentes del diff, `Safe to Merge` incoherente con QA) se descarta y fuerza **NO-GO**.
+- **La validación de UI no se salta en silencio:** en specs con superficie de UI el gate intenta levantar el server; un `SKIPPED` ahí degrada a APPROVED-WITH-WARNINGS o NO-GO. `SKIPPED` limpio solo cuando el spec no tiene UI.
 - El gate **nunca crea commits ni tags** — produce un *plan* de release. Tú ejecutas el release real tras el GO.
 - Cada item bloqueante viene con su **route-back** explícito (qué tarea/skill corregir).
-- El reporte completo queda en `.sdd/quality-gate-report.md`.
+- El reporte completo queda en `.sdd/quality-gate-report.md`. Hay un ejemplo real en [`examples/coupon-redemption/.sdd/quality-gate-report.md`](../examples/coupon-redemption/.sdd/quality-gate-report.md) (corrida ejecutable: `cd examples/coupon-redemption && node --test`).
 
 ---
 
