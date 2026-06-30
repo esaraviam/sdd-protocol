@@ -21,7 +21,7 @@ It treats specifications as **executable governance**: every task is bounded by 
 | Architecture | Implicit / accidental | **Contract-first** (`documentation/api·db·ui` + `conventions.md`) |
 | Model usage | One model for everything | **Model discipline**: Opus for design, Sonnet for code, Haiku for docs — see note below |
 | Parallelism | Risky / serial | **Collision-safe waves** — tasks with disjoint `file_scope` run in parallel |
-| "Done" | The agent says so | **Verify, don't trust** — skill proof + diff-in-scope + green tests |
+| "Done" | The agent says so | **Verify, don't trust** — diff-in-scope + green tests (deterministic) · diff-anchored skill proof + criteria (adjudicated) |
 | Release | Manual review | **Mandatory GO/NO-GO quality gate** |
 
 ---
@@ -87,7 +87,7 @@ The feature is only "done" when the gate returns **GO**. On **NO-GO** it names t
 
 1. **Surgical context over massive context.** Each task reads only its `read_architecture_section` and writes only inside its `file_scope`. No drift.
 2. **Token governance.** Intelligence is proportional to task complexity — Opus for strategy/security/the gate, Sonnet for logic, Haiku for utility. ⚠️ *A slash command can't change your session's model mid-run, so this is a **recommendation you apply** with `/model` for main-thread phases. A genuine automatic per-task override only happens in the **Phase 3 sub-agent fan-out** (Task tool `model` param). Tip: run the session on Opus and let Phase 3 drop to Sonnet/Haiku.*
-3. **Verification over trust.** A task is `completed` only when a `[SKILL-CONFIRMATION]` marker is present, `git diff` stays inside scope, declared files exist, and tests pass.
+3. **Verification over trust.** A task is `completed` only when its changes pass reconciliation. Two of those checks are **deterministic** (machine-objective): `git diff` stays inside the task's `file_scope`, and any declared test/lint command exits zero. Two are **adjudicated** (the orchestrator LLM judges them, anchored to the diff): the `[SKILL-CONFIRMATION]` marker must name files that actually appear in the diff (a free-form marker an agent could fabricate won't survive that cross-check), and the `acceptance_criteria` must be satisfied by the diff rather than merely asserted. The deterministic pair is the floor that can't be talked past; the adjudicated pair adds judgment on top. See [`docs/SDD-FLOW.md`](docs/SDD-FLOW.md) for the exact reconciliation order.
 
 Read the full operating manual in [`docs/SDD-FLOW.md`](docs/SDD-FLOW.md) and the philosophy in [`docs/SDD_MANIFESTO.md`](docs/SDD_MANIFESTO.md).
 

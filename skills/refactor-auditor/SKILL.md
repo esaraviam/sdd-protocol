@@ -156,3 +156,11 @@ After producing the refactor plan:
 ## GOAL
 
 Keep the system sustainable as it scales.
+
+---
+
+## Proof of Execution (Mandatory)
+
+Your final response must include the following marker to prove skill activation. **Every `<...>` field must name a concrete artifact (a file path, a count, a verdict) that the SDD orchestrator can cross-check against the `git diff` — not a free-form claim.** A marker whose named files do not appear in the diff is treated as a failed skill proof.
+
+`[SKILL-CONFIRMATION: refactor-auditor | Health Score: <0-10> | Files Audited: <files_in_diff> | BLOCKING: <count> | ADVISORY: <count>]`
