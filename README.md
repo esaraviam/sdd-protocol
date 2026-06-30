@@ -63,6 +63,19 @@ The feature is only "done" when the gate returns **GO**. On **NO-GO** it names t
 
 ---
 
+## See a full run
+
+A complete, **runnable** reference pipeline lives in [`examples/coupon-redemption/`](examples/coupon-redemption/) — a small backend feature carried through all four phases, with the real artifacts each phase emits (spec → contracts → task graph → skill markers → GO report).
+
+```bash
+cd examples/coupon-redemption
+node --test          # → 12/12 pass, zero install (Node ≥ 18)
+```
+
+Every `[SKILL-CONFIRMATION]` marker in that run names a file that actually appears in the diff — the same anchor the reconciliation enforces, so you can grep the markers against the files and confirm nothing is invented. See [`examples/README.md`](examples/README.md) for what's real vs. illustrative.
+
+---
+
 ## What's inside
 
 **Commands (4)**
@@ -72,7 +85,7 @@ The feature is only "done" when the gate returns **GO**. On **NO-GO** it names t
 | `/create-spec` | Business-analyst interview → `specs/<feature>.md` |
 | `/sdd` | Master orchestrator: architecture → backlog → parallel execution → auto quality gate |
 | `/sdd_resume` | Resume an interrupted pipeline from `.sdd/tasks/` |
-| `/sdd-quality-gate` | Closing GO/NO-GO gate (completeness → QA → audit → release plan → memory) |
+| `/sdd-quality-gate` | Closing GO/NO-GO gate — **re-runs the tests itself and cross-checks each gate skill's proof against the diff** (verify, don't trust); completeness → QA → audit → release plan → memory |
 
 **Skills (10)** — the expertise the orchestrator invokes by name:
 
