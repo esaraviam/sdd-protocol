@@ -1,0 +1,27 @@
+{
+  "id": "task_02",
+  "spec": "coupon-redemption.md",
+  "title": "Exhaustive test suite: happy path + every rejection and boundary",
+  "skill": "backend-coder",
+  "model_hint": "sonnet",
+  "status": "completed",
+  "depends_on": ["task_01"],
+  "read_architecture_section": "documentation/api/api_coupon-redemption.md#Redemption rules",
+  "file_scope": ["test/coupon.test.mjs"],
+  "acceptance_criteria": [
+    "Cover percent rounding, fixed clamping, and the 100%/over-subtotal edges.",
+    "Cover inclusive expiry exactly at expiresAt and rejection past it.",
+    "Cover minSubtotal, malformed codes, bad percent values, non-integer subtotals.",
+    "Suite is deterministic (fixed now) and runs with `node --test`, zero install.",
+    "All tests pass."
+  ],
+  "lock": null,
+  "result": {
+    "skill_invoked": "backend-coder",
+    "files": ["test/coupon.test.mjs"],
+    "marker": "[SKILL-CONFIRMATION: backend-coder | Implemented Files: test/coupon.test.mjs | Patterns: deterministic-clock, branch-coverage, node-test-runner]",
+    "criteria_satisfied": "5/5",
+    "validate_cmd": "node --test",
+    "validate_result": "tests 12 · pass 12 · fail 0"
+  }
+}
