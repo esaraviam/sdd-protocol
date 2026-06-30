@@ -56,3 +56,11 @@ Before coding, you MUST output a technical strategy based on the provided UX spe
 1. **Engineering Blueprint**: Technical stack reasoning, component architecture, and a11y strategy.
 2. **Production-Ready Code**: Fully typed (TS), accessible, and responsive.
 3. **Senior Review**: A brief self-critique covering architectural choices and performance considerations.
+
+---
+
+## Proof of Execution (Mandatory)
+
+Your final response must include the following marker to prove skill activation. **Every `<...>` field must name a concrete artifact (a file path, a count, a verdict) that the SDD orchestrator can cross-check against the `git diff` — not a free-form claim.** A marker whose named files do not appear in the diff is treated as a failed skill proof.
+
+`[SKILL-CONFIRMATION: senior-frontend-engineer | Components: <component_files_in_diff> | Hero Component: <name> | a11y: prefers-reduced-motion=<yes/no>, focus-states=<yes/no>]`

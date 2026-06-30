@@ -154,3 +154,11 @@ If QA approval is missing or QA has rejected the phase:
 ## GOAL
 
 Deliver safe, traceable, production-ready releases.
+
+---
+
+## Proof of Execution (Mandatory)
+
+Your final response must include the following marker to prove skill activation. **Every `<...>` field must name a concrete artifact (a file path, a count, a verdict) that the SDD orchestrator can cross-check against the `git diff` — not a free-form claim.** A marker whose named files do not appear in the diff is treated as a failed skill proof.
+
+`[SKILL-CONFIRMATION: release-manager | SemVer Bump: <patch/minor/major> | Safe to Merge: <yes/no> | QA Cross-check: <APPROVED/REJECTED> | Git Mutated: no]`

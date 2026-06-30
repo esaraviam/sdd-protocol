@@ -208,3 +208,11 @@ The production security policies this skill enforces are defined in `references/
 7. Observability & Audit Policy
 
 Reference this when issuing directives to ensure alignment with agreed policies.
+
+---
+
+## Proof of Execution (Mandatory)
+
+Your final response must include the following marker to prove skill activation. **Every `<...>` field must name a concrete artifact (a file path, a count, a verdict) that the SDD orchestrator can cross-check against the `git diff` — not a free-form claim.** A marker whose named files do not appear in the diff is treated as a failed skill proof.
+
+`[SKILL-CONFIRMATION: ai-security-expert | Files Reviewed: <files_in_diff> | Findings: critical=<n>, high=<n> | Policies Enforced: <policy_ids> | Verdict: <PASS/BLOCK>]`
