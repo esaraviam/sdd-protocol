@@ -53,7 +53,11 @@ Run this BEFORE invoking any quality skill. If it fails, output **NO-GO** immedi
 
 1. Invoke `qa-engineer` with the active spec, the implemented code, and the aggregated `acceptance_criteria` from every task.
 2. Capture its verdict: **APPROVED**, **APPROVED-WITH-WARNINGS**, or **REJECTED**, plus the list of failed checks and risks.
-3. If a dev/preview server is running and the spec has a UI surface, delegate UI-flow validation to `webapp-testing` and fold its result into the QA outcome.
+3. **UI-flow validation (no silent skips for UI specs).** If the spec has a UI surface (a `documentation/ui/ui_<spec>` contract, or any UI task exists):
+   - If a dev/preview server is already running, delegate UI-flow validation to `webapp-testing` against it.
+   - If no server is running, **the gate must try to start one before giving up.** Discover the launch command (the task graph's declared run command, or `package.json`'s `dev`/`start` script) and drive `webapp-testing` through `${CLAUDE_PLUGIN_ROOT}/skills/webapp-testing/scripts/with_server.py` (run it with `--help` first) so the validation hits the real running app.
+   - **A SKIPPED UI check is never silent on a spec that has a UI surface.** Only if no launch command can be discovered may UI validation be marked SKIPPED — and that downgrades the QA outcome to **APPROVED-WITH-WARNINGS** at best (surfaced prominently as "UI flows unvalidated — no runnable server"); if the UI is the feature's primary deliverable it is a **NO-GO input**. A clean SKIPPED is legitimate **only** when the spec has no UI surface at all.
+   - When UI validation runs, require its proof `[SKILL-CONFIRMATION: webapp-testing | Flows Tested: <count> | Passed: <count> | Failed: <count> | Evidence: <artifact_paths>]`, with `Evidence` naming artifacts that actually exist on disk. Any `Failed > 0` folds into the QA verdict as a failing check (REJECTED if a critical flow fails). Fold the **validated** result — not the self-report — into the QA outcome.
 4. **Skill proof (verify, don't trust — same falsifiability as the Phase 3 fan-out).** The captured verdict is *self-reported*; do not score the stage on it until it survives ground truth:
    - Require the marker `[SKILL-CONFIRMATION: qa-engineer | Verdict: <verdict> | Critical Issues Found: <count>]` exactly as defined in `qa-engineer`'s `SKILL.md`. Missing or name-mismatched → the skill run is unproven → **NO-GO input** (you cannot certify quality on an unproven check).
    - **Independently re-run the tests yourself** (the test/lint command the tasks declared, or the repo's standard `test`/`lint` script) via Bash. If it exits non-zero, the **effective QA verdict is REJECTED** no matter what the marker says — a `Verdict: APPROVED` over a failing suite is a contradiction, and the evidence wins.
@@ -110,6 +114,7 @@ Compute the final verdict:
   - The **verified** QA verdict (re-derived from the gate's own test run, not qa-engineer's self-report) is APPROVED or APPROVED-WITH-WARNINGS (not REJECTED)
   - No BLOCKING refactor issues (with a `refactor-auditor` marker anchored to the feature diff)
   - release-manager reports safe to merge, **consistent with the verified QA verdict**
+  - If the spec has a UI surface, its UI flows were actually validated against a running server (or the unvalidated-UI warning is surfaced) — a silently SKIPPED UI check on a UI spec is not a clean pass
 - Otherwise **NO-GO**, with a consolidated, deduplicated blocking list.
 
 For every blocking item, state **where to route back**: the specific `/sdd_resume` task, a re-run of a skill, or a manual fix. APPROVED-WITH-WARNINGS yields GO but the warnings are surfaced prominently.
@@ -144,10 +149,10 @@ Quality skills were NOT run. Resolve the gaps above and re-run /sdd-quality-gate
 Spec:           <spec>
 Completeness:   PASS  (<n>/<n> tasks completed)
 QA (qa-engineer):        APPROVED | WITH-WARNINGS | REJECTED
-UI (webapp-testing):     PASS | SKIPPED | FAIL
+UI (webapp-testing):     PASS | FAIL | WARN (UI surface, no runnable server) | SKIPPED (no UI surface)
 Architecture (auditor):  <score>/10   (BLOCKING: <n>, ADVISORY: <n>)
 Release (release-mgr):   bump <patch|minor|major> — safe: yes|no
-Skill proofs:            qa <✓|✗> · auditor <✓|✗> · release <✓|✗>   (markers cross-checked vs diff + own test run)
+Skill proofs:            qa <✓|✗> · ui <✓|✗|—> · auditor <✓|✗> · release <✓|✗>   (markers cross-checked vs diff + own test run)
 
 ──────────────────────────────────
   VERDICT:  GO  /  NO-GO
@@ -176,6 +181,7 @@ Full report written to .sdd/quality-gate-report.md
 - A QA **REJECTED** or any **BLOCKING** refactor issue ⇒ final **NO-GO**, no exceptions.
 - **Verify, don't trust the verdicts.** Each gate skill's verdict (`Verdict`, `Health Score`, `Safe to Merge`) counts only with a valid `[SKILL-CONFIRMATION]` marker that survives cross-check against ground truth — the gate's own test run plus the feature's `git diff` — the same falsifiability the Phase 3 fan-out applies. When a self-reported verdict contradicts the evidence, the evidence wins.
 - Never create commits or tags. Release readiness is a plan, not an action.
+- **A UI spec is never certified on an unvalidated UI surface.** Before marking UI SKIPPED, try to start a server with `with_server.py`; a SKIPPED UI check on a spec that has a UI surface is at best APPROVED-WITH-WARNINGS, never a clean pass.
 - Always name the exact route-back for each blocking item, so the user knows the next move.
 - Keep output tight: the verdict block is the headline; detail lives in the report file.
 
