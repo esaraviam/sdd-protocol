@@ -9,8 +9,8 @@
   "plugins": [
     {
       "name": "sdd",
-      "description": "Strict SDD pipeline: spec → architecture → backlog → parallel execution → GO/NO-GO quality gate. 4 commands + 10 expert skills. Engram semantic memory is optional.",
-      "version": "2.0.0",
+      "description": "Strict SDD pipeline: spec → architecture → backlog → parallel execution → GO/NO-GO quality gate. Split into /sdd-plan (Opus) + /sdd-execute (Sonnet) for automatic per-phase model routing. 4 commands + 10 expert skills. Engram semantic memory is optional.",
+      "version": "3.0.0",
       "author": {
         "name": "Esteban Saravia"
       },

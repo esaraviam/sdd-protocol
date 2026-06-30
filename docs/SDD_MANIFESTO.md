@@ -91,8 +91,9 @@ SDD is more than a toolset; it is a commitment to **Architectural Integrity**. W
 ## 6. How to Join the Protocol
 To implement SDD in your project, you must adopt the core commands:
 1. `/create-spec`: Capture the value.
-2. `/sdd`: Orchestrate the modularity.
-3. `/sdd-quality-gate`: Enforce the standard.
+2. `/sdd-plan`: Design the modularity (Opus).
+3. `/sdd-execute`: Build it in parallel (Sonnet).
+4. `/sdd-quality-gate`: Enforce the standard.
 
 ---
 *Created and maintained by the SDD Core Team.*

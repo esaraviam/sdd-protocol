@@ -1,5 +1,5 @@
 ---
-description: Closing quality + completeness gate for the SDD pipeline. Verifies every task is completed, then runs qa-engineer → refactor-auditor → release-manager (analysis only) and emits a single GO / NO-GO verdict. Blocks "done" until quality is proven. Auto-invoked at the end of /sdd; can also be run standalone.
+description: Closing quality + completeness gate for the SDD pipeline. Verifies every task is completed, then runs qa-engineer → refactor-auditor → release-manager (analysis only) and emits a single GO / NO-GO verdict. Blocks "done" until quality is proven. Auto-invoked at the end of /sdd-execute; can also be run standalone.
 argument-hint: "[spec-filename.md] — optional; inferred from .sdd/tasks/ if omitted"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Skill, Task, AskUserQuestion
 ---
@@ -29,7 +29,7 @@ These skills ship **bundled with this plugin** and load automatically — always
 
 Run this BEFORE invoking any quality skill. If it fails, output **NO-GO** immediately and do **not** run the quality skills (no point validating an incomplete pipeline).
 
-1. Scan `.sdd/tasks/*.json`. If the directory is missing or empty → **NO-GO** ("no task graph found; run `/sdd <spec>` first").
+1. Scan `.sdd/tasks/*.json`. If the directory is missing or empty → **NO-GO** ("no task graph found; run `/sdd-plan <spec>` first").
 2. Resolve the active spec (from `$ARGUMENTS` or the `"spec"` field).
 3. Verify **every** task has `"status": "completed"`. List any task that is `pending`, `in_progress`, or carries a stale lock.
 4. Verify each task has non-empty `acceptance_criteria`.
@@ -42,7 +42,7 @@ Run this BEFORE invoking any quality skill. If it fails, output **NO-GO** immedi
    - Use `grep -q "^#.*<heading>"` over the specified file.
    - Any broken pointer → **NO-GO** ("Broken architecture pointer in <task_id>: <pointer>").
 
-**If any check fails:** emit the Completeness Failure block (see Output), set verdict **NO-GO**, name the exact gap and which step/skill to route back to (usually a specific `/sdd_resume` task), and stop.
+**If any check fails:** emit the Completeness Failure block (see Output), set verdict **NO-GO**, name the exact gap and which step/skill to route back to (usually a specific `/sdd-execute` task), and stop.
 
 **If all pass:** continue to Stage 1.
 
@@ -117,7 +117,7 @@ Compute the final verdict:
   - If the spec has a UI surface, its UI flows were actually validated against a running server (or the unvalidated-UI warning is surfaced) — a silently SKIPPED UI check on a UI spec is not a clean pass
 - Otherwise **NO-GO**, with a consolidated, deduplicated blocking list.
 
-For every blocking item, state **where to route back**: the specific `/sdd_resume` task, a re-run of a skill, or a manual fix. APPROVED-WITH-WARNINGS yields GO but the warnings are surfaced prominently.
+For every blocking item, state **where to route back**: the specific `/sdd-execute` task, a re-run of a skill, or a manual fix. APPROVED-WITH-WARNINGS yields GO but the warnings are surfaced prominently.
 
 Write the full result to `.sdd/quality-gate-report.md` and print the verdict block to the user.
 
@@ -134,7 +134,7 @@ Spec: <spec>
 Tasks: <completed>/<total> completed
 
 Blocking gaps:
-  • <task_id / contract> — <what's missing> → <route back: /sdd_resume | fix>
+  • <task_id / contract> — <what's missing> → <route back: /sdd-execute | fix>
   ...
 
 Quality skills were NOT run. Resolve the gaps above and re-run /sdd-quality-gate.

@@ -11,11 +11,11 @@ Guía de operación del pipeline de **Spec-Driven Development (SDD)**, distribui
 | Paso | Comando | Qué hace | Produce |
 |------|---------|----------|---------|
 | 1 | `/create-spec <archivo.md>` | Te entrevista y escribe la especificación de negocio | `specs/<archivo>.md` |
-| 2 | `/sdd <archivo.md>` | Orquesta arquitectura → backlog → ejecución → quality gate | `documentation/`, `.sdd/tasks/`, código |
-| 3 | `/sdd_resume` | Retoma un pipeline interrumpido desde el grafo de tareas | continúa la siguiente tarea desbloqueada |
+| 2 | `/sdd-plan <archivo.md>` | **Planificación** (Fases 0–2) **fijada a Opus** vía frontmatter: arquitectura → backlog; emite el grafo y hace handoff | `documentation/`, `.sdd/tasks/` |
+| 3 | `/sdd-execute [archivo.md]` | **Ejecución** (Fase 3 + gate) **fijada a Sonnet**; los workers enrutan por su `model_hint`. También retoma un pipeline interrumpido | código verificado, gate GO/NO-GO |
 | 4 | `/sdd-quality-gate [archivo.md]` | Verifica completitud + calidad y emite veredicto **GO / NO-GO** | `.sdd/quality-gate-report.md` |
 
-Skills trabajadoras disponibles (invocadas por `/sdd` y el quality gate):
+Skills trabajadoras disponibles (invocadas por `/sdd-execute` y el quality gate):
 `software-architect`, `ai-security-expert`, `backend-coder`, `senior-frontend-engineer`, `ux-design-expert`, `qa-engineer`, `webapp-testing`, `refactor-auditor`, `release-manager`, `system-memory`.
 
 ---
@@ -58,19 +58,22 @@ Al terminar, escribe `specs/checkout-flow.md` con esta estructura fija:
 - [ ] ...
 ```
 
-> 💡 Revisa el archivo generado antes de pasar a `/sdd`. Esta es la única etapa pensada para iterar a mano.
+> 💡 Revisa el archivo generado antes de pasar a `/sdd-plan`. Esta es la única etapa pensada para iterar a mano.
 
 ---
 
-## 4. Paso 2 — Ejecutar el pipeline
+## 4. Paso 2 — Ejecutar el pipeline (plan → execute)
+
+El pipeline se corre en **dos comandos**, cada uno fija su modelo automáticamente vía frontmatter:
 
 ```
-/sdd checkout-flow.md
+/sdd-plan checkout-flow.md       # Fases 0–2, fijado a Opus → emite .sdd/tasks/
+/sdd-execute checkout-flow.md    # Fase 3 + quality gate, fijado a Sonnet
 ```
 
-> El argumento es **el nombre del archivo dentro de `specs/`**, no la ruta completa. Si lo omites, el comando te preguntará cuál procesar y se detendrá hasta que respondas.
+> El argumento es **el nombre del archivo dentro de `specs/`**, no la ruta completa. En `/sdd-plan` es obligatorio (si lo omites, te pregunta); en `/sdd-execute` es opcional (lo infiere del grafo). 
 
-El pipeline corre en **3 fases estrictas** con `[APPROVAL]` obligatorio entre cada una, más una **Fase 4** de quality gate que se dispara sola al final (sin `[APPROVAL]` previo).
+`/sdd-plan` corre las **Fases 0–2** en un solo turno (las aprobaciones entre fases se piden con `AskUserQuestion`, no con `[APPROVAL]` tecleado, para que el pin de Opus aguante). Cuando aprueba el grafo, te dice que corras `/sdd-execute`, que ejecuta la **Fase 3** y dispara sola la **Fase 4** de quality gate al final.
 
 ### Fase 1 — Diseño arquitectónico (`software-architect`)
 
@@ -86,21 +89,21 @@ El pipeline corre en **3 fases estrictas** con `[APPROVAL]` obligatorio entre ca
 
 ---
 
-## 5. Modelos por fase (recomendación, **no** enrutamiento automático)
+## 5. Modelos por fase (automático vía el split)
 
-> ⚠️ **Importante — cómo funciona de verdad.** Un slash command corre en **tu sesión actual de Claude Code y no puede cambiar el modelo de la sesión a mitad de ejecución.** Por lo tanto las fases que corren en el hilo principal (`/create-spec`, Fase 1, Fase 2, Fase 4 y cualquier llamada vía Skill tool) usan **el modelo que elegiste con `/model`**, sin importar la etiqueta. El **único** punto donde sí se aplica un modelo distinto es la **Fase 3 (fan-out)**: el orquestador puede pasar un `model` por sub-agente a la Task tool (`opus`/`sonnet`/`haiku`/`fable`); si no lo pasa, el sub-agente hereda el modelo de sesión.
+> ✅ **Cómo funciona.** Cada mitad del pipeline fija su modelo sola con el campo `model:` del frontmatter — **no necesitas `/model` manual**. `/sdd-plan` declara `model: opus` y `/sdd-execute` declara `model: sonnet`.
+>
+> ⚠️ **El detalle clave del frontmatter.** El override de `model:` **dura solo el turno actual** y se descarta en tu siguiente prompt tecleado. Por eso `/sdd-plan` pide sus aprobaciones entre fases con `AskUserQuestion` (mismo turno) en vez de esperar un `[APPROVAL]` tecleado: así Opus sigue activo en las Fases 1 y 2. El routing **más** robusto, independiente del turno, es la **Fase 3 (fan-out)**: `/sdd-execute` pasa el `model_hint` por sub-agente a la Task tool (`opus`/`sonnet`/`haiku`/`fable`); si no lo pasa, el sub-agente hereda el modelo de sesión.
 
-La tabla siguiente es la **guía recomendada** de qué modelo conviene para cada fase — tú la aplicas con `/model` (hilo principal) o vía `model_hint` → parámetro `model` de la Task tool (Fase 3):
-
-| Fase / Tarea | Modelo recomendado | Cómo se aplica | Razón |
+| Fase / Tarea | Modelo | Cómo se aplica | Razón |
 | :--- | :--- | :--- | :--- |
 | **Génesis de Spec** (`/create-spec`) | `Opus` | `/model` (o `model:` en frontmatter del comando) | Eliminar ambigüedades en la raíz del proyecto. |
-| **Arquitectura** (`Fase 1`) | `Opus` | `/model` en tu sesión | Razonamiento profundo para contratos y seguridad. |
-| **Backlog** (`Fase 2`) | `Sonnet` | `/model` en tu sesión | Precisión técnica para descomponer tareas atómicas. |
-| **Implementación** (`Fase 3`) | `Sonnet`/`Haiku` | `model_hint` → parámetro `model` de la Task tool ✅ **real** | Estándar para código; Haiku solo para doc/boilerplate. |
-| **Quality Gate** (`Fase 4`) | `Opus` | `/model` en tu sesión | Validación crítica vs Spec y auditoría. |
+| **Arquitectura** (`Fase 1`) | `Opus` | **automático** — `/sdd-plan` (frontmatter `model: opus`) | Razonamiento profundo para contratos y seguridad. |
+| **Backlog** (`Fase 2`) | `Opus` | **automático** — `/sdd-plan` (mismo turno Opus) | Precisión para descomponer tareas atómicas, respetando la arquitectura recién diseñada. |
+| **Implementación** (`Fase 3`) | `Sonnet`/`Haiku` | **automático** — `/sdd-execute` coordina en Sonnet; cada worker por su `model_hint` ✅ **real** | Estándar para código; Haiku solo para doc/boilerplate. |
+| **Quality Gate** (`Fase 4`) | `Opus`/`Sonnet` | la corre `/sdd-execute`; las tareas de auditoría se pueden marcar `model_hint: opus` | Validación crítica vs Spec y auditoría. |
 
-> 💡 **Recomendación práctica:** corre toda la sesión SDD en **Opus** (la calidad del diseño y del gate manda) y deja que la Fase 3 baje a `sonnet`/`haiku` por `model_hint`, que es donde el ahorro es real y automático.
+> 💡 **En la práctica:** corre `/sdd-plan` para diseño + backlog (Opus fijado) y `/sdd-execute` para construir (Sonnet fijado, workers por `model_hint`). El modelo correcto se aplica solo en cada mitad.
 
 **Prompt Caching:** los agentes leen siempre `conventions.md` al inicio de cada tarea. Esto activa el caché de Anthropic, reduciendo el costo de tokens en lecturas repetitivas.
 
@@ -116,12 +119,12 @@ A diferencia de los flujos genéricos, SDD mantiene una memoria viva del proyect
     - **Llave de proyecto (importante):** `engram save` **NO** auto-detecta el proyecto — hay que pasar `--project` explícito, y debe ser el **basename del repo** para que coincida con lo que escribe `engram sync`. Todas las fases lo derivan igual: `PROJ="$(basename "$(git rev-parse --show-toplevel)")"`.
     - **Ciclo que hace viajar la memoria por git:**
       - **Export (cierre):** la skill `system-memory` (Stage 4) hace `engram save … --project "$PROJ"` y luego `engram sync --project "$PROJ"`, que escribe `.engram/manifest.json` + `.engram/chunks/*.jsonl.gz`. `engram sync` **no toca git**; deja `.engram/` en el working tree y tu **commit de release post-GO lo incluye**. `.engram/` debe **commitearse**, nunca ir al `.gitignore`.
-      - **Import (apertura):** la **Fase 1** y `/sdd_resume` corren `engram sync --import --project "$PROJ"` para cargar en la DB local los chunks que vinieron en el `git pull`, antes de hacer recall. Así la memoria de un compañero (o de otra máquina) está disponible para tu corrida.
+      - **Import (apertura):** la **Fase 1** y `/sdd-execute` corren `engram sync --import --project "$PROJ"` para cargar en la DB local los chunks que vinieron en el `git pull`, antes de hacer recall. Así la memoria de un compañero (o de otra máquina) está disponible para tu corrida.
     - **Recall por fase:**
       - **Fase 1** → `engram search "<dominio>" --type architecture --project "$PROJ"` para traer decisiones de diseño previas que no debe contradecir.
       - **Fase 2** → `engram search "<dominio>" --type retrospective --project "$PROJ"` para inyectar lecciones de *cualquier* spec previo del proyecto, no solo del actual.
     - **Taxonomía de tipos:** `architecture` (decisiones / endpoints / modelos, tras GO) y `retrospective` (causa raíz + regla a aplicar, tras NO-GO).
-    - **Bootstrap (Fase 0 de `/sdd`):** al inicio del pipeline, un chequeo programático verifica que `.engram/` **no esté git-ignored** (con `git check-ignore`) y avisa si hay chunks sin commitear (`git add .engram/`). Si está ignorado, ofrece quitar esa línea del `.gitignore`. Es idempotente, silencioso cuando todo está bien, y se omite si `engram` no está instalado. Nunca commitea — solo verifica.
+    - **Bootstrap (Fase 0 de `/sdd-plan`):** al inicio del pipeline, un chequeo programático verifica que `.engram/` **no esté git-ignored** (con `git check-ignore`) y avisa si hay chunks sin commitear (`git add .engram/`). Si está ignorado, ofrece quitar esa línea del `.gitignore`. Es idempotente, silencioso cuando todo está bien, y se omite si `engram` no está instalado. Nunca commitea — solo verifica.
     - **Requisitos:** correr siempre desde la **raíz del proyecto**. Engram es **opcional**: si el binario `engram` no está instalado, las fases **omiten bootstrap/recall/sync en silencio** y operan solo con los archivos — el pipeline nunca falla por su ausencia. Para activar la memoria semántica, instala el plugin `engram` aparte (`/plugin install engram`) y permite `Bash(engram:*)` en tu `settings.json`.
 4.  **Quality Gate Feedback Loop:** Tras cada ejecución, el Gate (Stage 4) invoca la skill `system-memory` que hace **dual-write + sync**: destila el éxito en `SYSTEM_MAP.md` + `engram save --type architecture`, o el fallo en `retrospectives.json` + `engram save --type retrospective`, y exporta a `.engram/`. Así la memoria de la corrida queda versionada en git y disponible para el recall semántico de futuras specs en cualquier clon del repo.
 
@@ -159,7 +162,7 @@ Presenta el grafo completo (IDs, skill, dependencias) y **espera tu `[APPROVAL]`
 
 ### Fase 3 — Ejecución paralela por fan-out de agentes
 
-Aquí `/sdd` deja de implementar y actúa como **coordinador**: no escribe código ni lee la arquitectura, solo despacha cada tarea a un **subagente aislado** (Task tool, `general-purpose`, en background) que corre en su propio contexto y devuelve un resumen. Esto mantiene el contexto del orquestador liviano toda la corrida — **ya no necesitas `/compact` manual entre tareas**.
+Aquí `/sdd-execute` deja de implementar y actúa como **coordinador**: no escribe código ni lee la arquitectura, solo despacha cada tarea a un **subagente aislado** (Task tool, `general-purpose`, en background) que corre en su propio contexto y devuelve un resumen. Esto mantiene el contexto del orquestador liviano toda la corrida — **ya no necesitas `/compact` manual entre tareas**.
 
 Trabaja en **olas (waves)**:
 
@@ -179,9 +182,9 @@ Trabaja en **olas (waves)**:
 
 ### Fase 4 — Quality Gate obligatorio (auto-invocado)
 
-Cuando no quedan tareas `pending`, el pipeline **todavía no está terminado**. `/sdd` invoca automáticamente `/sdd-quality-gate` (ver Paso 4). El feature solo se considera completo cuando el gate devuelve **GO**.
+Cuando no quedan tareas `pending`, el pipeline **todavía no está terminado**. `/sdd-execute` invoca automáticamente `/sdd-quality-gate` (ver Paso 4). El feature solo se considera completo cuando el gate devuelve **GO**.
 
-- Si devuelve **NO-GO**, te indica la tarea/skill exacta a corregir (normalmente vía `/sdd_resume`) y vuelves a correr el gate.
+- Si devuelve **NO-GO**, te indica la tarea/skill exacta a corregir (normalmente vía `/sdd-execute`) y vuelves a correr el gate.
 - El gate **nunca muta git**; tras un GO, tú ejecutas el release real.
 
 ---
@@ -191,7 +194,7 @@ Cuando no quedan tareas `pending`, el pipeline **todavía no está terminado**. 
 Si cerraste la sesión, hiciste `/clear`, o cambiaste de terminal a mitad de la Fase 3:
 
 ```
-/sdd_resume
+/sdd-execute
 ```
 
 - Reconstruye el estado escaneando `.sdd/tasks/*.json`.
@@ -205,10 +208,10 @@ Si cerraste la sesión, hiciste `/clear`, o cambiaste de terminal a mitad de la 
 
 ## 6. Paralelismo: cómo se ejecuta de verdad
 
-**Modelo primario — fan-out de agentes en una sola sesión.** En la Fase 3, `/sdd` coordina y lanza un subagente por tarea desbloqueada con `file_scope` disjunto, todos en background a la vez:
+**Modelo primario — fan-out de agentes en una sola sesión.** En la Fase 3, `/sdd-execute` coordina y lanza un subagente por tarea desbloqueada con `file_scope` disjunto, todos en background a la vez:
 
 ```
-/sdd checkout-flow.md
+/sdd-execute checkout-flow.md
    └─ Fase 3 (coordinador)
         ├─ agente → task_02 (backend-coder)   ┐
         ├─ agente → task_03 (frontend)        ├─ en paralelo, contextos aislados
@@ -221,7 +224,7 @@ Ventajas frente al esquema viejo de terminales:
 - **Aislamiento real:** cada tarea muere con su agente; no hay fugas de contexto entre tareas.
 - **Colisiones imposibles:** la ola exige `file_scope` disjuntos.
 
-**Modelo secundario (opcional) — multi-terminal.** Los locks siguen existiendo, así que aún puedes abrir terminales extra con `/sdd_resume` si quieres más concurrencia que la de una sesión. Cada terminal estampa su lock y no pelea por la misma tarea.
+**Modelo secundario (opcional) — multi-terminal.** Los locks siguen existiendo, así que aún puedes abrir terminales extra con `/sdd-execute` si quieres más concurrencia que la de una sesión. Cada terminal estampa su lock y no pelea por la misma tarea.
 
 ---
 
@@ -249,7 +252,7 @@ proyecto/
 
 ## 8. Paso 4 — Quality Gate (`/sdd-quality-gate`)
 
-El gate es la **compuerta de cierre obligatoria** del pipeline. Se ejecuta solo (lo invoca `/sdd` al terminar la Fase 3) o lo corres a mano:
+El gate es la **compuerta de cierre obligatoria** del pipeline. Se ejecuta solo (lo invoca `/sdd-execute` al terminar la Fase 3) o lo corres a mano:
 
 ```
 /sdd-quality-gate                 # infiere el spec desde .sdd/tasks/
@@ -282,12 +285,12 @@ Emite un único veredicto vinculante: **GO** o **NO-GO**. El pipeline solo está
 
 | Síntoma | Causa probable | Solución |
 |---------|----------------|----------|
-| `/sdd` pregunta qué archivo procesar | Invocaste sin argumento | `/sdd <archivo.md>` con el nombre dentro de `specs/` |
+| `/sdd-plan` pregunta qué archivo procesar | Invocaste sin argumento | `/sdd-plan <archivo.md>` con el nombre dentro de `specs/` |
 | No encuentra el spec | Lo corriste fuera de la raíz del proyecto | `cd` a la raíz y vuelve a ejecutar |
 | Una tarea nunca se desbloquea | Dependencia mal puesta en `depends_on` o una tarea quedó `in_progress` colgada | Revisa/edita el JSON en `.sdd/tasks/`; limpia el lock manualmente |
 | El arquitecto intenta escribir código | — | Es comportamiento prohibido por diseño; reitera que la Fase 1 es solo contratos |
 | Dos tareas pisan el mismo archivo | `file_scope` solapados puestos en la misma ola | Ajusta los `file_scope` para que sean disjuntos, o añade un `depends_on` entre ellas para serializarlas |
-| Una tarea quedó colgada en `in_progress` | El agente falló sin reconciliar | Vuelve a poner `pending` y limpia el lock en el JSON; `/sdd_resume` la re-despachará |
+| Una tarea quedó colgada en `in_progress` | El agente falló sin reconciliar | Vuelve a poner `pending` y limpia el lock en el JSON; `/sdd-execute` la re-despachará |
 
 ---
 

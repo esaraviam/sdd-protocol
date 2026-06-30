@@ -5,8 +5,9 @@
 **SDD is an agent orchestration protocol** packaged as a Claude Code plugin. Instead of asking an AI to "build a feature" in one shot, SDD runs a strict, auditable pipeline that turns an idea into shipped software:
 
 ```
-/create-spec  →  /sdd  →  /sdd-quality-gate
-   spec          architecture · backlog · parallel execution        GO / NO-GO
+/create-spec  →  /sdd-plan  →  /sdd-execute
+   spec        architecture · backlog      parallel execution · GO/NO-GO gate
+                  [Opus]                       [Sonnet]
 ```
 
 It treats specifications as **executable governance**: every task is bounded by a surgical file scope, routed to the right-sized model, run by an isolated agent, and verified objectively before it counts as done.
@@ -45,15 +46,18 @@ That's it — the 4 commands and 10 expert skills load automatically and are ava
 # 1. Capture the requirement (interview, one question at a time)
 /create-spec checkout-flow.md
 
-# 2. Run the pipeline (waits for your [APPROVAL] between phases)
-/sdd checkout-flow.md
-#    Phase 1  architecture contracts        → documentation/api·db·ui + conventions.md   [APPROVAL]
-#    Phase 2  atomic task graph             → .sdd/tasks/task_NN.json                    [APPROVAL]
+# 2. Plan — architecture + backlog, pinned to Opus (approves inline; no manual /model)
+/sdd-plan checkout-flow.md
+#    Phase 1  architecture contracts        → documentation/api·db·ui + conventions.md   [approve]
+#    Phase 2  atomic task graph             → .sdd/tasks/task_NN.json                    [approve]
+
+# 3. Execute — parallel fan-out + quality gate, pinned to Sonnet (workers route per model_hint)
+/sdd-execute checkout-flow.md
 #    Phase 3  parallel agent fan-out        → implemented code (verified, in-scope)
 #    Phase 4  quality gate (auto)           → GO / NO-GO
 
-# Interrupted? Resume from the task graph:
-/sdd_resume
+# Interrupted? /sdd-execute also resumes from the task graph:
+/sdd-execute
 
 # Run the gate standalone anytime:
 /sdd-quality-gate checkout-flow.md
@@ -83,8 +87,8 @@ Every `[SKILL-CONFIRMATION]` marker in that run names a file that actually appea
 | Command | Role |
 |---|---|
 | `/create-spec` | Business-analyst interview → `specs/<feature>.md` |
-| `/sdd` | Master orchestrator: architecture → backlog → parallel execution → auto quality gate |
-| `/sdd_resume` | Resume an interrupted pipeline from `.sdd/tasks/` |
+| `/sdd-plan` | Planning half (Phases 0–2) **pinned to Opus** via frontmatter: architecture → backlog. Emits `.sdd/tasks/` and hands off to `/sdd-execute` |
+| `/sdd-execute` | Execution half (Phase 3 + gate) **pinned to Sonnet**; workers route per their `model_hint`. Also resumes an interrupted pipeline from `.sdd/tasks/` |
 | `/sdd-quality-gate` | Closing GO/NO-GO gate — **re-runs the tests itself and cross-checks each gate skill's proof against the diff** (verify, don't trust); completeness → QA → audit → release plan → memory |
 
 **Skills (10)** — the expertise the orchestrator invokes by name:
