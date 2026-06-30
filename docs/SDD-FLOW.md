@@ -167,7 +167,14 @@ Trabaja en **olas (waves)**:
 2. **Armar la ola (sin colisiones).** Del conjunto desbloqueado, selecciona un lote cuyos `file_scope` sean **disjuntos entre sí**. Dos tareas que comparten un archivo van en olas distintas.
 3. **Reclamar.** Marca cada tarea de la ola como `in_progress` + lock antes de despachar (evita doble-toma entre terminales).
 4. **Fan-out en background.** Lanza un subagente por tarea, **en paralelo**. Cada agente recibe un payload mínimo: `id`/`title`/`acceptance_criteria`/`file_scope`; la instrucción de **invocar la skill de `"skill"` y demostrarlo** en su reporte (la experticia vive en la skill: hacer el trabajo de forma genérica es una falla, no un atajo); de leer **primero** `documentation/conventions.md` y luego **solo** su `read_architecture_section`. **Frontera dura:** si necesita tocar un archivo fuera de su `file_scope`, debe **ABORTAR y reportarlo**, nunca editarlo. El agente devuelve un **reporte estructurado**: prueba de skill (`skill_invoked` + marcador específico), archivos modificados, cada criterio cumplido sí/no, y el comando de test/lint si aplica.
-5. **Esperar y reconciliar (verificar, no confiar).** Un "listo" auto-reportado no basta. Marca `completed` **solo si pasan todas**: (a) la prueba de skill coincide con `"skill"`; (b) `git diff --name-only` (más untracked) muestra que **todo** path tocado cae dentro del `file_scope`; (c) los archivos declarados existen en el diff; (d) el comando de test/lint, si lo hay, sale con código 0; (e) los `acceptance_criteria` se cumplen objetivamente en el diff. Si algo falla → vuelve a `pending`, libera el lock y registra el motivo en el JSON.
+5. **Esperar y reconciliar (verificar, no confiar).** Un "listo" auto-reportado no basta. Marca `completed` **solo si pasan todas**:
+   - (a) **Prueba de skill falsable (no solo presente).** El marcador `[SKILL-CONFIRMATION: <skill> | … ]` debe existir tal cual lo define ese `SKILL.md`, y se valida en orden: **(a.1) presencia + nombre** — existe y `<skill>` coincide con el `"skill"` de la tarea; **(a.2) anchor contra el diff** — todo path que el marcador nombra (`Components`, `Delivered Files`, `Files Reviewed`, `Files Audited`, `Implemented Files`) debe aparecer en el `git diff` de la tarea; un marcador que nombra cero archivos con diff no-vacío, o nombra un archivo ausente del diff, → reject; **(a.3) consistencia de veredicto** — si el marcador trae un campo de veredicto/score (`Verdict`, `Health Score`, `Safe to Merge`, `BLOCKING`), no debe contradecir los checks (d)/(e). Un marcador presente que falla (a.2) o (a.3) **se trata como prueba inexistente** — reject igual que si faltara. Esto es lo que hace la prueba falsable: un string libre que el agente podría inventar sin trabajar no sobrevive al cross-check contra el diff.
+   - (b) `git diff --name-only` (más untracked) muestra que **todo** path tocado cae dentro del `file_scope`.
+   - (c) los archivos declarados existen en el diff.
+   - (d) el comando de test/lint, si lo hay, sale con código 0.
+   - (e) los `acceptance_criteria` se cumplen objetivamente en el diff.
+
+   Si algo falla → vuelve a `pending`, libera el lock y registra el motivo en el JSON.
 6. **Loop.** Re-resuelve dependencias (tareas completadas desbloquean otras) y despacha la siguiente ola. Sin purga: el contexto de cada worker murió con su agente.
 
 ### Fase 4 — Quality Gate obligatorio (auto-invocado)
@@ -288,5 +295,5 @@ Emite un único veredicto vinculante: **GO** o **NO-GO**. El pipeline solo está
 2. **Respeta los `[APPROVAL]`.** Son la oportunidad de corregir antes de que el costo suba.
 3. **Lee solo la porción que necesitas.** El `read_architecture_section` existe para ahorrar contexto; no leas toda la arquitectura.
 4. **`file_scope` disjuntos = paralelismo seguro.** Es lo que permite el fan-out de agentes; si dos tareas comparten archivos, serialízalas con `depends_on`.
-5. **Verificar, no confiar.** Una tarea pasa a `completed` solo cuando la reconciliación lo prueba objetivamente (skill invocada, diff dentro del `file_scope`, tests en verde), no cuando el agente lo afirma.
+5. **Verificar, no confiar.** Una tarea pasa a `completed` solo cuando la reconciliación lo prueba objetivamente — marcador de skill **anclado al diff** (los archivos que nombra existen en el `git diff` y su veredicto no contradice los tests), diff dentro del `file_scope` y tests en verde — no cuando el agente lo afirma.
 6. **No declares el feature terminado sin un GO** de `/sdd-quality-gate`. El pipeline solo cierra con veredicto GO.

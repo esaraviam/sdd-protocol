@@ -184,8 +184,8 @@ When generating a backend solution:
 5. Include **examples of usage (requests, flows, etc.)**
 
 **Proof of Execution (Mandatory):**
-Your final response must include the following marker to prove skill activation:
-`[SKILL-CONFIRMATION: backend-coder | Implemented Files: <list_files> | Patterns: <patterns>]`
+Your final response must include the following marker to prove skill activation. **Every `<...>` field must name a concrete artifact (a file path, a count, a verdict) that the SDD orchestrator can cross-check against the `git diff` — not a free-form claim.** A marker whose named files do not appear in the diff is treated as a failed skill proof.
+`[SKILL-CONFIRMATION: backend-coder | Implemented Files: <files_in_diff> | Patterns: <patterns>]`
 
 ---
 
