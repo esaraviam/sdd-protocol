@@ -161,4 +161,25 @@ Deliver safe, traceable, production-ready releases.
 
 Your final response must include the following marker to prove skill activation. **Every `<...>` field must name a concrete artifact (a file path, a count, a verdict) that the SDD orchestrator can cross-check against the `git diff` — not a free-form claim.** A marker whose named files do not appear in the diff is treated as a failed skill proof.
 
-`[SKILL-CONFIRMATION: release-manager | SemVer Bump: <patch/minor/major> | Safe to Merge: <yes/no> | QA Cross-check: <APPROVED/REJECTED> | Git Mutated: no]`
+`[SKILL-CONFIRMATION: release-manager | SemVer Bump: <patch/minor/major> | Safe to Merge: <yes/no> | QA Cross-check: <APPROVED/REJECTED> | Git Mutated: no | Artifact: semver-derivation v1]`
+
+---
+
+## Structural Artifact (Mandatory)
+
+Declaring a bump is a claim; deriving it from the changes is the work. You MUST emit a **semver-derivation matrix** classifying the actual changes, from which the bump follows mechanically.
+
+**Schema:** `semver-derivation v1`. Emit a fenced block:
+
+```
+[ARTIFACT: release-manager | schema=semver-derivation v1]
+change | evidence_ref | class | bump_implied
+<one row per notable change>
+```
+
+- **change** — a user-visible change or internal fix.
+- **evidence_ref** — a file in the `git diff` or a commit hash that substantiates it. **Must resolve.**
+- **class** — `breaking` | `feature` | `fix` | `chore`.
+- **bump_implied** — `major` (breaking) | `minor` (feature) | `patch` (fix/chore).
+
+**Cross-check (how the anchor falsifies it):** the marker's `SemVer Bump` must equal `max(bump_implied)` across rows (any `breaking` ⇒ `major`, else any `feature` ⇒ `minor`, else `patch`). Every `evidence_ref` must resolve to a real diff file or commit. A matrix whose derived max disagrees with the declared bump, or that cites evidence absent from the repo, is **rejected**; and `Git Mutated: no` is still verified against `git status`/`git tag`.

@@ -8,6 +8,7 @@
   "depends_on": [],
   "read_architecture_section": "documentation/api/api_coupon-redemption.md#Redemption rules",
   "file_scope": ["src/coupon.mjs"],
+  "test_command": "node --test",
   "acceptance_criteria": [
     "Percent and fixed coupons compute the correct discounted total in integer cents.",
     "A discount larger than the subtotal clamps the total to 0 (never negative).",
@@ -19,8 +20,18 @@
   "result": {
     "skill_invoked": "backend-coder",
     "files": ["src/coupon.mjs"],
-    "marker": "[SKILL-CONFIRMATION: backend-coder | Implemented Files: src/coupon.mjs | Patterns: pure-function, integer-cents, result-type-over-exceptions]",
+    "marker": "[SKILL-CONFIRMATION: backend-coder | Implemented Files: src/coupon.mjs | Patterns: pure-function, integer-cents, result-type-over-exceptions | Artifact: backend-impl v1]",
+    "artifact": {
+      "schema": "backend-impl v1",
+      "test_command": "node --test",
+      "exit": 0,
+      "rows": [
+        { "implemented_file": "src/coupon.mjs", "exercised_by": "test/coupon.test.mjs" }
+      ]
+    },
     "criteria_satisfied": "5/5",
-    "validate_cmd": "node --test"
+    "validate_cmd": "node --test",
+    "test_command": "node --test",
+    "test_exit": 0
   }
 }

@@ -8,6 +8,7 @@
   "depends_on": ["task_01"],
   "read_architecture_section": "documentation/api/api_coupon-redemption.md#Redemption rules",
   "file_scope": ["test/coupon.test.mjs"],
+  "test_command": "node --test",
   "acceptance_criteria": [
     "Cover percent rounding, fixed clamping, and the 100%/over-subtotal edges.",
     "Cover inclusive expiry exactly at expiresAt and rejection past it.",
@@ -19,9 +20,19 @@
   "result": {
     "skill_invoked": "backend-coder",
     "files": ["test/coupon.test.mjs"],
-    "marker": "[SKILL-CONFIRMATION: backend-coder | Implemented Files: test/coupon.test.mjs | Patterns: deterministic-clock, branch-coverage, node-test-runner]",
+    "marker": "[SKILL-CONFIRMATION: backend-coder | Implemented Files: test/coupon.test.mjs | Patterns: deterministic-clock, branch-coverage, node-test-runner | Artifact: backend-impl v1]",
+    "artifact": {
+      "schema": "backend-impl v1",
+      "test_command": "node --test",
+      "exit": 0,
+      "rows": [
+        { "implemented_file": "test/coupon.test.mjs", "exercised_by": "node --test (12 cases, all green)" }
+      ]
+    },
     "criteria_satisfied": "5/5",
     "validate_cmd": "node --test",
-    "validate_result": "tests 12 · pass 12 · fail 0"
+    "validate_result": "tests 12 · pass 12 · fail 0",
+    "test_command": "node --test",
+    "test_exit": 0
   }
 }
