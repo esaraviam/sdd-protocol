@@ -163,4 +163,26 @@ Keep the system sustainable as it scales.
 
 Your final response must include the following marker to prove skill activation. **Every `<...>` field must name a concrete artifact (a file path, a count, a verdict) that the SDD orchestrator can cross-check against the `git diff` — not a free-form claim.** A marker whose named files do not appear in the diff is treated as a failed skill proof.
 
-`[SKILL-CONFIRMATION: refactor-auditor | Health Score: <0-10> | Files Audited: <files_in_diff> | BLOCKING: <count> | ADVISORY: <count>]`
+`[SKILL-CONFIRMATION: refactor-auditor | Health Score: <0-10> | Files Audited: <files_in_diff> | BLOCKING: <count> | ADVISORY: <count> | Artifact: refactor-metrics v1]`
+
+---
+
+## Structural Artifact (Mandatory)
+
+The marker proves which files you named; it does **not** prove you measured them. So you MUST also emit a **metrics artifact** computed over files that are actually in the diff. A Health Score with no metrics behind it is an opinion, not an audit.
+
+**Schema:** `refactor-metrics v1`. Emit a fenced block:
+
+```
+[ARTIFACT: refactor-auditor | schema=refactor-metrics v1]
+file | cyclomatic_max | duplication_pct | coupling | verdict
+<one row per file audited>
+```
+
+- **file** — a path that **must appear in the feature's `git diff`**.
+- **cyclomatic_max** — highest cyclomatic complexity of any function in that file (integer).
+- **duplication_pct** — estimated duplicated-line ratio (0–100).
+- **coupling** — count of outbound module dependencies.
+- **verdict** — `BLOCKING` | `ADVISORY` | `OK` for that file.
+
+**Cross-check (how the anchor falsifies it):** every `file` row must be present in the diff; a metrics row over a file **absent from the diff → reject**. The count of `BLOCKING` rows must equal the marker's `BLOCKING:` count, and `Files Audited` must equal the set of `file` rows. Metrics that don't correspond to diff files, or a marker whose counts disagree with the artifact, are **rejected** as no proof at all.

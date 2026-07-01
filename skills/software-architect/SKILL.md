@@ -126,4 +126,25 @@ When designing the solution for a specification, you must NEVER write a single m
 
 **Proof of Execution (Mandatory):**
 Your final response must include the following marker to prove skill activation:
-`[SKILL-CONFIRMATION: software-architect | Applied Architecture Patterns: <list_patterns>]`
+`[SKILL-CONFIRMATION: software-architect | Applied Architecture Patterns: <list_patterns> | Artifact: architecture-decision v1]`
+
+---
+
+**Structural Artifact (Mandatory):**
+
+Naming patterns proves nothing; anchoring each pattern to the contract it shaped does. You MUST emit a **decision→contract map** whose every row points to a real section of a contract file you wrote and (when binding) to a real line of `.sdd/memory-index.jsonl`.
+
+**Schema:** `architecture-decision v1`. Emit a fenced block:
+
+```
+[ARTIFACT: software-architect | schema=architecture-decision v1]
+pattern_or_decision | contract_ref | binding | index_ref
+<one row per applied pattern / key decision>
+```
+
+- **pattern_or_decision** — the pattern or invariant applied (matches the marker's list).
+- **contract_ref** — the file + section where it is realized: `documentation/api/api_<spec>.md`, `documentation/db/db_<spec>.md`, or `documentation/ui/ui_<spec>.md`. **Must resolve to a real file present in the diff.**
+- **binding** — `true`/`false`; a `true` decision (security/tenancy-RLS/API-contract/data-invariant) MUST also have an `index_ref`.
+- **index_ref** — the `id` of the matching line in `.sdd/memory-index.jsonl` (Prompt 04/05), or `—` when non-binding.
+
+**Cross-check (how the anchor falsifies it):** every `contract_ref` must resolve to a real contract file in the diff, and every `binding:true` row must have an `index_ref` that exists in `.sdd/memory-index.jsonl`. A decision map that cites contracts not written, or a binding decision with no index line, is **rejected** as no proof at all.

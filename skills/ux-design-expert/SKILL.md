@@ -163,4 +163,25 @@ If any item fails, fix it before delivering.
 
 Your final response must include the following marker to prove skill activation. **Every `<...>` field must name a concrete artifact (a file path, a count, a verdict) that the SDD orchestrator can cross-check against the `git diff` — not a free-form claim.** A marker whose named files do not appear in the diff is treated as a failed skill proof.
 
-`[SKILL-CONFIRMATION: ux-design-expert | Delivered Files: <files_in_diff> | Quality Gate: mobile=<pass/fail>, contrast=<pass/fail>, states=<pass/fail> | Failures Fixed: <count>]`
+`[SKILL-CONFIRMATION: ux-design-expert | Delivered Files: <files_in_diff> | Quality Gate: mobile=<pass/fail>, contrast=<pass/fail>, states=<pass/fail> | Failures Fixed: <count> | Artifact: ux-quality-matrix v1]`
+
+---
+
+## Structural Artifact (Mandatory)
+
+A pass/fail summary is only trustworthy if each check is anchored to a delivered file. You MUST emit a **quality matrix** mapping each check to the file it was evaluated against.
+
+**Schema:** `ux-quality-matrix v1`. Emit a fenced block:
+
+```
+[ARTIFACT: ux-design-expert | schema=ux-quality-matrix v1]
+check | delivered_file | result | note
+<one row per check per delivered file>
+```
+
+- **check** — `mobile` | `contrast` | `states` (loading/empty/error/success) | `5s-clarity`.
+- **delivered_file** — a path that **must appear in the `git diff`**.
+- **result** — `pass` | `fail`.
+- **note** — the concrete value checked (e.g. contrast ratio `4.7:1`, breakpoint `375px`).
+
+**Cross-check (how the anchor falsifies it):** every `delivered_file` must be in the diff; the per-check aggregate (`mobile`/`contrast`/`states`) in the marker must equal the AND of the corresponding rows; and `Failures Fixed` must be consistent with the `fail`→re-`pass` transitions described. A matrix over files absent from the diff, or aggregates that disagree with the rows, is **rejected** as no proof at all.

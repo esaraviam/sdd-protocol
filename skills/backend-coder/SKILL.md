@@ -185,7 +185,28 @@ When generating a backend solution:
 
 **Proof of Execution (Mandatory):**
 Your final response must include the following marker to prove skill activation. **Every `<...>` field must name a concrete artifact (a file path, a count, a verdict) that the SDD orchestrator can cross-check against the `git diff` — not a free-form claim.** A marker whose named files do not appear in the diff is treated as a failed skill proof.
-`[SKILL-CONFIRMATION: backend-coder | Implemented Files: <files_in_diff> | Patterns: <patterns>]`
+`[SKILL-CONFIRMATION: backend-coder | Implemented Files: <files_in_diff> | Patterns: <patterns> | Artifact: backend-impl v1]`
+
+---
+
+## Structural Artifact (Mandatory)
+
+Your structural artifact is the **`test_command` (Prompt 01) plus the file→test mapping** that proves the implementation is exercised, not just written. Plausible code that no test touches is exactly the failure mode this closes.
+
+**Schema:** `backend-impl v1`. Emit a fenced block:
+
+```
+[ARTIFACT: backend-coder | schema=backend-impl v1]
+test_command: <the exact command> | exit: <code>
+implemented_file | exercised_by
+<one row per implemented source file>
+```
+
+- **test_command / exit** — the task's declared `test_command` and the exit code you observed running it. Non-zero → the task fails reconciliation (Prompt 01); a code task with no `test_command` is invalid.
+- **implemented_file** — a source path that **must appear in the `git diff`**.
+- **exercised_by** — the test name/file (in the diff or tree) that covers that file.
+
+**Cross-check (how the anchor falsifies it):** `test_command` must be non-empty and its recorded `exit` must be `0`; every `implemented_file` must be in the diff and map to a real `exercised_by` test. An implemented file with no exercising test, or a missing/failing `test_command`, is **rejected** — code authored without a passing test is treated as no skill proof at all.
 
 ---
 

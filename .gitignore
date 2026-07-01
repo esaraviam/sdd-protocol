@@ -1,5 +1,12 @@
 .DS_Store
 *.log
+# SDD runtime lockfiles — local exclusion state, not versionable memory (unlike .engram/)
+.sdd/locks/
+# Resolved memory mode (ACTIVE|DEGRADED) — reflects THIS machine's engram availability, local runtime state
+.sdd/memory-mode
+# .sdd/memory-index.jsonl is the deterministic memory index — it MUST travel with the
+# repo (like .engram/). Keep it tracked; never add a pattern that ignores it.
+!.sdd/memory-index.jsonl
 .idea/
 .vscode/
 open-pr.sh

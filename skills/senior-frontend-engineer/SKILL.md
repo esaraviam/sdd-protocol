@@ -63,4 +63,26 @@ Before coding, you MUST output a technical strategy based on the provided UX spe
 
 Your final response must include the following marker to prove skill activation. **Every `<...>` field must name a concrete artifact (a file path, a count, a verdict) that the SDD orchestrator can cross-check against the `git diff` — not a free-form claim.** A marker whose named files do not appear in the diff is treated as a failed skill proof.
 
-`[SKILL-CONFIRMATION: senior-frontend-engineer | Components: <component_files_in_diff> | Hero Component: <name> | a11y: prefers-reduced-motion=<yes/no>, focus-states=<yes/no>]`
+`[SKILL-CONFIRMATION: senior-frontend-engineer | Components: <component_files_in_diff> | Hero Component: <name> | a11y: prefers-reduced-motion=<yes/no>, focus-states=<yes/no> | Artifact: frontend-impl v1]`
+
+---
+
+## Structural Artifact (Mandatory)
+
+Your structural artifact ties each delivered component to its **`test_command` (Prompt 01)** and to concrete a11y evidence — proof the component was engineered, not merely dropped into the diff.
+
+**Schema:** `frontend-impl v1`. Emit a fenced block:
+
+```
+[ARTIFACT: senior-frontend-engineer | schema=frontend-impl v1]
+test_command: <the exact command> | exit: <code>
+component_file | a11y_focus | a11y_reduced_motion | exercised_by
+<one row per component>
+```
+
+- **test_command / exit** — the task's declared `test_command` and observed exit code (must be `0`).
+- **component_file** — a path that **must appear in the `git diff`**.
+- **a11y_focus / a11y_reduced_motion** — `yes`/`no`, and must match the marker's `a11y:` fields.
+- **exercised_by** — the test (diff or tree) covering the component.
+
+**Cross-check (how the anchor falsifies it):** every `component_file` must be in the diff, the a11y columns must agree with the marker, and `test_command` exit must be `0`. A component with no exercising test or a11y claims that contradict the marker is **rejected** as no proof at all.

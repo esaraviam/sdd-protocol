@@ -132,7 +132,29 @@ If issues are found, output:
 
 **Proof of Execution (Mandatory):**
 Your final response must include the following marker to prove skill activation:
-`[SKILL-CONFIRMATION: qa-engineer | Verdict: <verdict> | Critical Issues Found: <count>]`
+`[SKILL-CONFIRMATION: qa-engineer | Verdict: <verdict> | Critical Issues Found: <count> | Artifact: qa-traceability v1]`
+
+---
+
+## Structural Artifact (Mandatory)
+
+A verdict without traceability is a claim. You MUST emit a **criterion × test matrix** that maps every acceptance criterion of the task to a real test that exists and ran.
+
+**Schema:** `qa-traceability v1`. Emit a fenced block:
+
+```
+[ARTIFACT: qa-engineer | schema=qa-traceability v1]
+acceptance_criterion | test_name | test_file | test_exit | status
+<one row per acceptance criterion>
+```
+
+- **acceptance_criterion** — verbatim (or id) from the task's `acceptance_criteria`.
+- **test_name** — the concrete test case that exercises it.
+- **test_file** — path to the test; **must appear in the `git diff`** (or already exist in the repo tree).
+- **test_exit** — exit code observed when the task's `test_command` ran (Prompt 01). Must be `0` for a passing criterion.
+- **status** — `COVERED` | `GAP`.
+
+**Cross-check (how the anchor falsifies it):** there must be **one row per acceptance criterion** — an uncovered criterion is a `GAP` row, and any `GAP` on a code task forces a failing QA verdict. Every `test_file` must resolve to a real file (diff or tree); a row citing a non-existent test → reject. `Critical Issues Found` in the marker must equal the count of `GAP` rows on binding/critical criteria. A matrix that claims full coverage while citing tests absent from the diff is **rejected** as no proof at all.
 
 ---
 

@@ -215,4 +215,26 @@ Reference this when issuing directives to ensure alignment with agreed policies.
 
 Your final response must include the following marker to prove skill activation. **Every `<...>` field must name a concrete artifact (a file path, a count, a verdict) that the SDD orchestrator can cross-check against the `git diff` — not a free-form claim.** A marker whose named files do not appear in the diff is treated as a failed skill proof.
 
-`[SKILL-CONFIRMATION: ai-security-expert | Files Reviewed: <files_in_diff> | Findings: critical=<n>, high=<n> | Policies Enforced: <policy_ids> | Verdict: <PASS/BLOCK>]`
+`[SKILL-CONFIRMATION: ai-security-expert | Files Reviewed: <files_in_diff> | Findings: critical=<n>, high=<n> | Policies Enforced: <policy_ids> | Verdict: <PASS/BLOCK> | Artifact: threat-model v1]`
+
+---
+
+## Structural Artifact (Mandatory)
+
+The marker proves you touched files; it does **not** prove you applied threat-modeling. So you MUST also emit a **structural artifact** whose *shape only this skill produces* and whose every reference cross-checks against real evidence. A generic, well-formed-but-empty artifact must fail the anchor — that is the point.
+
+**Schema:** `threat-model v1`. Emit a fenced block:
+
+```
+[ARTIFACT: ai-security-expert | schema=threat-model v1]
+surface | contract_ref | threat | mitigation | mitigation_ref
+<one row per attack surface>
+```
+
+- **surface** — an attack surface you analyzed (an endpoint, a request field, a DB column, an inter-skill message).
+- **contract_ref** — where that surface is *actually declared*: an endpoint in `documentation/api/api_<spec>.md`, a field/table in `documentation/db/db_<spec>.md`, or a policy id in `references/security-policies.md`. **This must resolve to a real line in a real contract file.**
+- **threat** — the concrete abuse (e.g. IDOR, prompt injection, tenant bleed).
+- **mitigation** — the control applied.
+- **mitigation_ref** — the file (must appear in the `git diff`) or policy id where the control lives.
+
+**Cross-check (how the anchor falsifies it):** every `contract_ref` must resolve to a real endpoint/field/policy in a real contract file, and every `mitigation_ref` that names a file must appear in the diff. A threat-model that references surfaces absent from the API/DB contract, or mitigations absent from the diff, is **rejected** and treated as *no skill proof at all* — regardless of the marker. The artifact must have **≥1 row per non-trivial surface in the task's `file_scope`**; zero rows on a security-relevant scope → reject.

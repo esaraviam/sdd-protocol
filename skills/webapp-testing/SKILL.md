@@ -111,4 +111,25 @@ with sync_playwright() as p:
 
 Your final response must include the following marker to prove skill activation. **Every `<...>` field must name a concrete artifact (a file path, a count, a verdict) that the SDD orchestrator can cross-check against the `git diff` — not a free-form claim.** A marker whose named files do not appear in the diff is treated as a failed skill proof.
 
-`[SKILL-CONFIRMATION: webapp-testing | Flows Tested: <count> | Passed: <count> | Failed: <count> | Evidence: <screenshot_or_artifact_paths>]`
+`[SKILL-CONFIRMATION: webapp-testing | Flows Tested: <count> | Passed: <count> | Failed: <count> | Evidence: <screenshot_or_artifact_paths> | Artifact: e2e-evidence v1]`
+
+---
+
+## Structural Artifact (Mandatory)
+
+A flow count is only real if each flow points to an artifact that exists on disk. You MUST emit a **flow × evidence matrix** where every evidence path is a file the gate can `stat`.
+
+**Schema:** `e2e-evidence v1`. Emit a fenced block:
+
+```
+[ARTIFACT: webapp-testing | schema=e2e-evidence v1]
+flow | steps | evidence_path | result
+<one row per flow tested>
+```
+
+- **flow** — the user journey exercised (e.g. `redeem-coupon-happy-path`).
+- **steps** — count of automated steps in that flow.
+- **evidence_path** — a screenshot/log/trace path that **must exist on disk**.
+- **result** — `pass` | `fail`.
+
+**Cross-check (how the anchor falsifies it):** the number of rows must equal `Flows Tested`, `pass`/`fail` row counts must equal `Passed`/`Failed`, and **every `evidence_path` must exist on disk** (the gate verifies via Bash). A matrix citing evidence files that aren't present, or counts that disagree with the marker, is **rejected** as no proof at all — a passing flow with no artifact never ran.
