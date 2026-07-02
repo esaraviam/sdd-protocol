@@ -38,6 +38,8 @@ That's it — the 4 commands and 10 expert skills load automatically and are ava
 
 > **Optional — semantic memory.** SDD works fully standalone. If you also install [engram](https://github.com/Gentleman-Programming/engram) (`/plugin install engram`) and allow `Bash(engram:*)`, the pipeline gains cross-spec semantic recall that travels with your repo. Without it, SDD falls back to git-tracked memory files and never fails.
 
+> **⚠️ Remove personal copies of these skills.** The plugin's skills are namespaced `sdd:<name>` and the pipeline invokes them that way. If you keep copies with the same short names under `~/.claude/skills/` (e.g. from a pre-plugin install), a bare-name invocation can silently resolve to your **stale local copy** — whose proof markers and artifact schemas may no longer match what the quality gate validates. Delete or archive those copies after installing the plugin.
+
 ---
 
 ## Quickstart

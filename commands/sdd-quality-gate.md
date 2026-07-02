@@ -2,6 +2,8 @@
 description: Closing quality + completeness gate for the SDD pipeline. Verifies every task is completed, then runs qa-engineer → refactor-auditor → release-manager (analysis only) and emits a single GO / NO-GO verdict. Blocks "done" until quality is proven. Auto-invoked at the end of /sdd-execute; can also be run standalone.
 argument-hint: "[spec-filename.md] — optional; inferred from .sdd/tasks/ if omitted"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Skill, Task, AskUserQuestion
+model: opus
+effort: high
 ---
 
 You are the **SDD Quality Gate** — the mandatory closing checkpoint of the Spec-Driven Development pipeline. Your job is to guarantee that a pipeline is not declared "done" until completeness and quality are objectively proven. You do **not** implement features; you verify, validate, and rule.
@@ -14,13 +16,13 @@ You are the **SDD Quality Gate** — the mandatory closing checkpoint of the Spe
 - **Gate report (output):** `.sdd/quality-gate-report.md`
 - **Active spec:** taken from `$ARGUMENTS` if provided, otherwise read from the `"spec"` field inside the task files.
 
-## Model Guidance (recommendations — NOT automatic)
-> This gate runs in your **current session**; its skills are invoked via the Skill tool on the **session model** — the aliases below cannot switch it automatically. Set the session with `/model` (Opus recommended for the gate), or delegate a stage to a Task sub-agent with an explicit `model` override if you want it pinned.
-- **[ARCH_OPUS]** → `opus` (QA, Audit, Final Verdict)
+## Model Guidance — how this gate pins Opus
+> This gate declares **`model: opus`** in its frontmatter, so invoking it — standalone *or* auto-invoked at the end of `/sdd-execute` — switches the run to Opus **for the rest of the current turn** (the session model resumes on your next typed prompt). No `/model` needed: even when `/sdd-execute` (pinned to Sonnet) hands off to this gate mid-turn, the verdict stages run on Opus. The aliases below remain as recommendations for delegating a stage to a Task sub-agent with an explicit `model` override:
+- **[ARCH_OPUS]** → `opus` (QA, Audit, Final Verdict — already active via frontmatter)
 - **[DEV_SONNET]** → `sonnet` (State analysis, programmatic checks)
 - **[DOC_HAIKU]** → `haiku` (Report generation, changelogs)
 
-These skills ship **bundled with this plugin** and load automatically — always invoke them **by name** with the Skill tool. Only as a fallback (if name resolution fails) read the file directly at `${CLAUDE_PLUGIN_ROOT}/skills/<name>/SKILL.md`.
+These skills ship **bundled with this plugin** — always invoke them with the Skill tool by their **plugin-qualified name**: `sdd:qa-engineer`, `sdd:refactor-auditor`, `sdd:release-manager`, `sdd:system-memory`, `sdd:webapp-testing`. A bare short name (`qa-engineer`) can silently resolve to a **stale personal copy** under `~/.claude/skills/` if one exists — whose markers and artifact schemas may not match what this gate validates. Only as a fallback (if namespaced resolution fails) read the file directly at `${CLAUDE_PLUGIN_ROOT}/skills/<name>/SKILL.md`.
 
 ---
 
@@ -56,11 +58,11 @@ Run this BEFORE invoking any quality skill. If it fails, output **NO-GO** immedi
 ## STAGE 1 — Functional Quality (`qa-engineer`)
 *   **Model:** Use **[ARCH_OPUS]** for this stage.
 
-1. Invoke `qa-engineer` with the active spec, the implemented code, and the aggregated `acceptance_criteria` from every task.
+1. Invoke `sdd:qa-engineer` with the active spec, the implemented code, and the aggregated `acceptance_criteria` from every task.
 2. Capture its verdict: **APPROVED**, **APPROVED-WITH-WARNINGS**, or **REJECTED**, plus the list of failed checks and risks.
 3. **UI-flow validation (no silent skips for UI specs).** If the spec has a UI surface (a `documentation/ui/ui_<spec>` contract, or any UI task exists):
-   - If a dev/preview server is already running, delegate UI-flow validation to `webapp-testing` against it.
-   - If no server is running, **the gate must try to start one before giving up.** Discover the launch command (the task graph's declared run command, or `package.json`'s `dev`/`start` script) and drive `webapp-testing` through `${CLAUDE_PLUGIN_ROOT}/skills/webapp-testing/scripts/with_server.py` (run it with `--help` first) so the validation hits the real running app.
+   - If a dev/preview server is already running, delegate UI-flow validation to `sdd:webapp-testing` against it.
+   - If no server is running, **the gate must try to start one before giving up.** Discover the launch command (the task graph's declared run command, or `package.json`'s `dev`/`start` script) and drive `sdd:webapp-testing` through `${CLAUDE_PLUGIN_ROOT}/skills/webapp-testing/scripts/with_server.py` (run it with `--help` first) so the validation hits the real running app.
    - **A SKIPPED UI check is never silent on a spec that has a UI surface.** Only if no launch command can be discovered may UI validation be marked SKIPPED — and that downgrades the QA outcome to **APPROVED-WITH-WARNINGS** at best (surfaced prominently as "UI flows unvalidated — no runnable server"); if the UI is the feature's primary deliverable it is a **NO-GO input**. A clean SKIPPED is legitimate **only** when the spec has no UI surface at all.
    - When UI validation runs, require its proof `[SKILL-CONFIRMATION: webapp-testing | … | Artifact: e2e-evidence v1]` **plus** the `[ARTIFACT: webapp-testing | schema=e2e-evidence v1]` block, with each `evidence_path` naming an artifact that actually exists on disk (verify via Bash `test -f`) and row counts matching `Flows Tested`/`Passed`/`Failed`. A passing flow whose evidence file is absent → the flow is treated as un-run → reject. Any `Failed > 0` folds into the QA verdict as a failing check (REJECTED if a critical flow fails). Fold the **validated** result — not the self-report — into the QA outcome.
 4. **Skill proof (verify, don't trust — same falsifiability as the Phase 3 fan-out).** The captured verdict is *self-reported*; do not score the stage on it until it survives ground truth:
@@ -77,7 +79,7 @@ Run this BEFORE invoking any quality skill. If it fails, output **NO-GO** immedi
 ## STAGE 2 — Architectural Health (`refactor-auditor`)
 *   **Model:** Use **[ARCH_OPUS]** for this stage.
 
-1. Invoke `refactor-auditor` over the files delivered by the pipeline.
+1. Invoke `sdd:refactor-auditor` over the files delivered by the pipeline.
 2. Capture the overall health score (0–10) and the issues, classified as **BLOCKING** (must fix now) vs **ADVISORY** (next iteration).
 3. Any **BLOCKING** issue forces **NO-GO**. ADVISORY issues are reported but do not block.
 4. **Skill proof (verify, don't trust).** Require the marker `[SKILL-CONFIRMATION: refactor-auditor | Health Score: <0-10> | Files Audited: <files_in_diff> | BLOCKING: <count> | ADVISORY: <count> | Artifact: refactor-metrics v1]`, then cross-check it against ground truth — for an analysis skill the anchor is the feature's **cumulative `git diff`**:
@@ -90,7 +92,7 @@ Run this BEFORE invoking any quality skill. If it fails, output **NO-GO** immedi
 ## STAGE 3 — Release Readiness (`release-manager`, analysis only)
 *   **Model:** Use **[DOC_HAIKU]** for changelog/notes generation; use **[ARCH_OPUS]** for the final "Safe to merge" decision.
 
-1. Invoke `release-manager` in **analysis mode**. It MUST:
+1. Invoke `sdd:release-manager` in **Analysis Mode** (its default and only mode inside this pipeline — defined in its `SKILL.md`). It MUST:
    - Decide the SemVer bump (patch / minor / major) with rationale.
    - Generate the changelog (Added / Changed / Fixed) and release notes.
    - State the merge strategy and "Safe to merge? yes/no".
@@ -102,7 +104,7 @@ Run this BEFORE invoking any quality skill. If it fails, output **NO-GO** immedi
 ## STAGE 4 — Memory Persistence (`system-memory`)
 *   **Model:** Use **[ARCH_OPUS]** to analyze the results and update memory.
 
-1. Invoke `system-memory` to process the outcome of the gate. It **dual-writes**: the git-tracked files stay authoritative, and a mirrored memory is saved to **Engram** (`engram` CLI) for cross-spec semantic recall by future Phase 1 / Phase 2 runs.
+1. Invoke `sdd:system-memory` to process the outcome of the gate. It **dual-writes**: the git-tracked files stay authoritative, and a mirrored memory is saved to **Engram** (`engram` CLI) for cross-spec semantic recall by future Phase 1 / Phase 2 runs.
    - **If Verdict is GO:** Update `documentation/SYSTEM_MAP.md` with the new architecture, endpoints, and data models; mirror each decision via `engram save ... --type architecture`.
    - **If Verdict is NO-GO:** Extract the root cause of the blocking items, update `.sdd/retrospectives.json`, and mirror the lesson via `engram save ... --type retrospective`.
    - After saving, the skill runs `engram sync --project "$PROJ"` to export the new memories into `.engram/` so they **travel with the repo via git**. The gate still never runs git itself — `.engram/` is left in the working tree for the user's post-GO release commit to include alongside the feature.

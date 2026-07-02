@@ -101,7 +101,7 @@ El pipeline se corre en **dos comandos**, cada uno fija su modelo automáticamen
 | **Arquitectura** (`Fase 1`) | `Opus` | **automático** — `/sdd-plan` (frontmatter `model: opus`) | Razonamiento profundo para contratos y seguridad. |
 | **Backlog** (`Fase 2`) | `Opus` | **automático** — `/sdd-plan` (mismo turno Opus) | Precisión para descomponer tareas atómicas, respetando la arquitectura recién diseñada. |
 | **Implementación** (`Fase 3`) | `Sonnet`/`Haiku` | **automático** — `/sdd-execute` coordina en Sonnet; cada worker por su `model_hint` ✅ **real** | Estándar para código; Haiku solo para doc/boilerplate. |
-| **Quality Gate** (`Fase 4`) | `Opus`/`Sonnet` | la corre `/sdd-execute`; las tareas de auditoría se pueden marcar `model_hint: opus` | Validación crítica vs Spec y auditoría. |
+| **Quality Gate** (`Fase 4`) | `Opus` | **automático** — `/sdd-quality-gate` declara `model: opus` en su frontmatter (rige el resto del turno aunque lo dispare `/sdd-execute` en Sonnet) | Validación crítica vs Spec y auditoría. |
 
 > 💡 **En la práctica:** corre `/sdd-plan` para diseño + backlog (Opus fijado) y `/sdd-execute` para construir (Sonnet fijado, workers por `model_hint`). El modelo correcto se aplica solo en cada mitad.
 
